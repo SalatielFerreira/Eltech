@@ -2,6 +2,20 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.5.0] — 2026-06-25
+
+### Múltiplas contas na mesma máquina
+
+- Agora é possível **cadastrar e manter várias contas** no mesmo navegador, cada uma com
+  seus **próprios dados** (lotes, animais, inseminação, medicação, alimentação). Antes o
+  cadastro bloqueava criar uma segunda conta.
+- Para **trocar de conta**: sair (logout) e entrar com o outro usuário. O app lembra a
+  última conta usada (com "Manter conectado").
+- O cadastro agora bloqueia apenas **emails repetidos** (não mais "já existe uma conta").
+- **Migração automática:** a conta única que já existia é convertida para o novo formato
+  sem perder nenhum dado; senha em texto puro vira hash no primeiro login.
+- Importar backup substitui os dados **apenas da conta atual**.
+
 ## [3.4.2] — 2026-06-25
 
 ### Correções
