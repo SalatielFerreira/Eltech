@@ -2,6 +2,26 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.2.0] — 2026-06-25
+
+### Novos recursos (Etapa 1 — locais, sem dependência externa)
+
+- **Lembrete de backup:** o app conta as alterações e mostra um aviso "Faça um backup"
+  quando passam 7 dias ou 30 alterações desde o último. O botão "Baixar" exporta na hora
+  e zera o contador.
+- **Alertas de medicação e carência:** novos campos "carência leite (dias)" e
+  "carência carne (dias)" no cadastro de medicação. O app avisa quais animais estão em
+  tratamento e até quando **não** vender leite / abater (data de liberação calculada).
+- **Calendário reprodutivo:** a partir da inseminação/prenhez, calcula o **parto previsto**
+  (gestação de 283 dias) e avisa quando está próximo; lembra de fazer o **diagnóstico de
+  prenhez** ~30 dias após a inseminação.
+- **Histórico de leite e peso por animal:** botão de gráfico (📈) em cada animal abre a
+  evolução da produção de leite e do peso ao longo do tempo. O histórico de leite é
+  registrado automaticamente quando o campo "Leite" é alterado na edição.
+- **Seção de Alertas na Home** reunindo medicação, carência e reprodução.
+
+> Próxima etapa (planejada): backup automático no Google Drive.
+
 ## [3.1.0] — 2026-06-25
 
 ### Segurança e usabilidade

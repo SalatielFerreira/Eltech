@@ -60,6 +60,7 @@
     <!-- HOME -->
     <div class="page active" id="pageHome">
       <div class="stat-grid" id="statGrid"></div>
+      <div id="homeAlerts"></div>
       <div class="chart-container glass">
         <h3>Visão do Rebanho</h3>
         <div class="chart-filters" id="chartFilters">
@@ -275,6 +276,7 @@
 <div class="form-group"><label>Observação</label><textarea class="form-input" id="insemObs" placeholder="Observações..."></textarea></div>
 <button class="btn btn-primary mt-8" onclick="saveInsemAnimal()">Salvar</button></div></div>
 
+<div class="modal-overlay" id="histModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="histModalTitle">Histórico</h3><button class="modal-close" onclick="closeModal('histModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="histContent"></div></div></div>
 <div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Modo de Seleção</label>
 <div style="display:flex;gap:6px;margin-bottom:12px">
@@ -292,6 +294,7 @@
 </div>
 <div class="flex-row"><div class="form-group"><label>Início</label><input class="form-input" id="medDataIni" type="date"></div><div class="form-group"><label>Até Quando</label><input class="form-input" id="medDataFim" type="date"></div></div>
 <div class="form-group"><label>Tipo</label><select class="form-input" id="medTipo"><option value="Vacina">Vacina</option><option value="Vermífugo">Vermífugo</option><option value="Tratamento">Tratamento</option></select></div>
+<div class="flex-row"><div class="form-group"><label>Carência leite (dias)</label><input class="form-input" id="medCarLeite" type="number" min="0" inputmode="numeric" placeholder="0"></div><div class="form-group"><label>Carência carne (dias)</label><input class="form-input" id="medCarCarne" type="number" min="0" inputmode="numeric" placeholder="0"></div></div>
 <div id="medMedicamentos">
   <div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><label style="font-size:.65rem">Medicamento</label><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><label style="font-size:.65rem">Dosagem</label><input class="form-input medDoseInput" placeholder="Dose"></div></div>
 </div>
