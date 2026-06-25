@@ -2,6 +2,15 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.6.0] — 2026-06-25
+
+### Tema bege escuro
+
+- A cor do tema mudou de **verde** para **bege escuro** em todo o app: botões, bordas,
+  destaques, textos, quadros, relatório gerado e a cor do tema do PWA (barra do sistema).
+- Os quadros continuam escuros e foscos, agora em tom **marrom/bege** quente.
+- Cores funcionais (vermelho de excluir, azul de abrir) e as cores dos gráficos foram mantidas.
+
 ## [3.5.0] — 2026-06-25
 
 ### Múltiplas contas na mesma máquina
