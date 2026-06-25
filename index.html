@@ -61,6 +61,7 @@
     <div class="page active" id="pageHome">
       <div class="stat-grid" id="statGrid"></div>
       <div id="homeAlerts"></div>
+      <div id="farmPanel"></div>
       <div class="chart-container glass">
         <h3>Visão do Rebanho</h3>
         <div class="chart-filters" id="chartFilters">
@@ -276,6 +277,7 @@
 <div class="form-group"><label>Observação</label><textarea class="form-input" id="insemObs" placeholder="Observações..."></textarea></div>
 <button class="btn btn-primary mt-8" onclick="saveInsemAnimal()">Salvar</button></div></div>
 
+<div class="modal-overlay" id="fichaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
 <div class="modal-overlay" id="histModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="histModalTitle">Histórico</h3><button class="modal-close" onclick="closeModal('histModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="histContent"></div></div></div>
 <div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Modo de Seleção</label>

@@ -2,6 +2,23 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.3.0] — 2026-06-25
+
+### Sistema integrado — o animal no centro de tudo
+
+- **Ficha do Animal 360°:** tocar em um animal (ou no botão de perfil) abre tudo sobre ele
+  numa tela só — dados, **genealogia clicável** (mãe, pai e filhos, navegando pela família),
+  reprodução (inseminações, parto previsto, último parto), medicações (com carência),
+  alimentação com **custo de ração acumulado**, gráficos de leite e peso, e **linha do tempo**
+  com todos os eventos em ordem.
+- **Vínculo por ID:** os registros de inseminação, medicação e alimentação passam a guardar o
+  **id interno** do animal (além do número), mantendo as conexões corretas mesmo que o número
+  seja alterado. Dados antigos continuam ligados pelo número (compatível).
+- **Painel do Sítio (Home):** visão do conjunto — leite/dia total, vacas em lactação, taxa de
+  prenhez, nº de prenhas, custo de ração e animais em tratamento.
+- **Custo × retorno por vaca:** a Ficha mostra o custo de ração acumulado ao lado da produção
+  atual de leite, ajudando a avaliar quais animais valem a pena.
+
 ## [3.2.0] — 2026-06-25
 
 ### Novos recursos (Etapa 1 — locais, sem dependência externa)
