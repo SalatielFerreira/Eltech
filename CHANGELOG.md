@@ -2,6 +2,13 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.4.2] — 2026-06-25
+
+### Correções
+
+- **Aviso de backup:** não aparece mais na primeira abertura (onde se sobrepunha ao banner
+  de instalar o app). Agora surge somente após **30 alterações** desde o último backup.
+
 ## [3.4.0] — 2026-06-25
 
 ### Ajustes de visual

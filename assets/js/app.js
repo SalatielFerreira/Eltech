@@ -167,7 +167,7 @@ function exportBackup(){const data=JSON.stringify(DB,null,2);const blob=new Blob
 function importBackup(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=async function(ev){try{const data=JSON.parse(ev.target.result);const ok=await showConfirm('Substituir TODOS os dados?','📦');if(!ok)return;DB=data;if(!DB.lotes)DB.lotes=[];if(!DB.inseminacao)DB.inseminacao=[];if(!DB.medDirect)DB.medDirect=[];if(!DB.aliDirect)DB.aliDirect=[];if(!DB.meta)DB.meta={lastBackup:0,changes:0};save();if(DB.user.name)document.getElementById('profileName').value=DB.user.name;if(DB.user.avatar){document.getElementById('avatarImg').src=DB.user.avatar;document.getElementById('avatarImg').style.display='block';document.getElementById('avatarPlaceholder').style.display='none'}goPage('pageHome');toast('Backup restaurado!')}catch(err){toast('Arquivo inválido','error')}};reader.readAsText(file);e.target.value=''}
 
 // ========== LEMBRETE DE BACKUP ==========
-function checkBackupReminder(){if(!DB.meta)return;const changes=DB.meta.changes||0;if(changes<1)return;const days=(Date.now()-(DB.meta.lastBackup||0))/86400000;if(days>=7||changes>=30)showBackupBanner(changes)}
+function checkBackupReminder(){if(!DB.meta)return;const changes=DB.meta.changes||0;if(changes>=30)showBackupBanner(changes)}
 function showBackupBanner(changes){if(document.getElementById('backupBanner'))return;const d=document.createElement('div');d.id='backupBanner';d.style.cssText='position:fixed;bottom:80px;left:16px;right:16px;z-index:65;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slideUp .4s ease';d.className='glass';d.innerHTML=`<div style="flex:1"><div style="font-weight:700;font-size:.88rem">💾 Faça um backup</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">${changes} alteração(ões) desde o último backup</div></div><button class="btn btn-primary btn-sm" onclick="exportBackup()" style="flex-shrink:0">Baixar</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:1.2rem">✕</button>`;document.body.appendChild(d)}
 
 // ========== ALERTAS (medicação, carência, reprodução) ==========
@@ -286,7 +286,7 @@ function renderFarmPanel(){
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.4.1';
+const APP_VERSION = '3.4.2';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
