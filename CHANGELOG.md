@@ -2,6 +2,16 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.4.0] — 2026-06-25
+
+### Ajustes de visual
+
+- **Botões sólidos e fortes:** os botões deixaram de usar degradê e passaram a ter cor
+  cheia e vibrante (verde, vermelho e azul conforme a função), com melhor contraste.
+- **Quadros mais escuros e foscos:** cards, painéis, modais, listas e barras passaram de
+  vidro branco translúcido para **vidro verde-escuro mais opaco**, deixando o conteúdo
+  muito mais legível.
+
 ## [3.3.0] — 2026-06-25
 
 ### Sistema integrado — o animal no centro de tudo
