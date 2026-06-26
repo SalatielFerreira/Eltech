@@ -2,6 +2,12 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.6.5] — 2026-06-26
+
+### Cor
+
+- Marrom dos textos (títulos, saudação, estados vazios) trocado para o tom escolhido `#4A4135`.
+
 ## [3.6.4] — 2026-06-25
 
 ### Mais ajustes de cor
