@@ -70,7 +70,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show');edi
 // ========== LOTES ==========
 function populateLoteSelect(selId){const sel=document.getElementById(selId);if(!sel)return;const prev=sel.value;sel.innerHTML='<option value="">Selecione...</option>';DB.lotes.forEach(l=>{sel.innerHTML+=`<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`});if(prev)sel.value=prev}
 function saveLote(){const name=document.getElementById('loteNome').value.trim();if(!name)return toast('Digite o nome do lote','error');if(editLoteId){const l=DB.lotes.find(x=>x.id===editLoteId);if(l)l.name=name}else DB.lotes.push({id:uid(),name,createdAt:Date.now(),animals:[]});save();closeModal('loteModal');renderLotes();toast('Lote salvo!')}
-function renderLotes(){const container=document.getElementById('lotesList');const sorted=[...DB.lotes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));container.innerHTML=sorted.length?sorted.map(l=>{return`<div class="card glass2 anim-fade"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="card-title">${esc(l.name)}</div><div class="card-sub">${l.animals.length} animal(is)</div></div></div><div class="card-actions"><button class="edit-btn" onclick="event.stopPropagation();editLoteFromCard('${l.id}')">Editar</button><button class="del-btn" onclick="event.stopPropagation();delLote('${l.id}')">Excluir</button><button class="open-btn" onclick="openLoteDetail('${l.id}')">Abrir →</button></div></div>`}).join(''):'<div class="empty-state"><p>Nenhum lote criado.<br>Toque no 📁 para criar um lote.</p></div>'}
+function renderLotes(){const container=document.getElementById('lotesList');const sorted=[...DB.lotes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));container.innerHTML=sorted.length?sorted.map(l=>{return`<div class="card glass2 anim-fade"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="card-title">${esc(l.name)}</div><div class="card-sub">${l.animals.length} animal(is)</div></div></div><div class="card-actions"><button class="edit-btn" onclick="event.stopPropagation();editLoteFromCard('${l.id}')">Editar</button><button class="del-btn" onclick="event.stopPropagation();delLote('${l.id}')">Excluir</button><button class="open-btn" onclick="openLoteDetail('${l.id}')">Abrir →</button></div></div>`}).join(''):'<div class="empty-state"><p>Nenhum lote criado.</p></div>'}
 function editLoteFromCard(id){const l=DB.lotes.find(x=>x.id===id);if(!l)return;editLoteId=id;document.getElementById('loteNome').value=l.name;document.getElementById('loteModalTitle').textContent='Editar Lote';openModal('loteModal')}
 async function delLote(id){const ok=await showConfirm('Excluir este lote e todos os animais?','🗑️');if(!ok)return;DB.lotes=DB.lotes.filter(x=>x.id!==id);save();renderLotes();toast('Lote excluído')}
 function openLoteDetail(id){currentLoteId=id;document.getElementById('rebanhoMain').classList.add('hidden');document.getElementById('loteDetail').classList.remove('hidden');const l=DB.lotes.find(x=>x.id===id);document.getElementById('loteDetailTitle').textContent=l.name;if(document.getElementById('searchLote'))document.getElementById('searchLote').value='';renderLoteAnimals()}
@@ -78,7 +78,7 @@ function backToLotes(){document.getElementById('loteDetail').classList.add('hidd
 function openAnimalForLote(){editAniId=null;document.getElementById('animalModalTitle').textContent='Adicionar Animal';initAnimalForm();populateLoteSelect('animalLote');document.getElementById('animalLote').value=currentLoteId||'';openModal('animalModal')}
 function toggleLoteFilter(){document.getElementById('loteFilterBar').classList.toggle('hidden')}
 
-function renderLoteAnimals(){const l=DB.lotes.find(x=>x.id===currentLoteId);if(!l)return;let animals=[...l.animals];const q=(document.getElementById('searchLote')?.value||'').toLowerCase().trim();if(q)animals=animals.filter(a=>(a.num||'').toLowerCase().includes(q)||(a.nome||'').toLowerCase().includes(q));const fs=document.getElementById('filterSexo')?.value||'';const fc=document.getElementById('filterCat')?.value||'';const fst=document.getElementById('filterSit')?.value||'';if(fs)animals=animals.filter(a=>a.sexo===fs);if(fc)animals=animals.filter(a=>a.cat===fc);if(fst)animals=animals.filter(a=>a.sit===fst);sortByNum(animals);const container=document.getElementById('loteAnimals');if(!animals.length){container.innerHTML=`<div class="empty-state"><p>${q||fs||fc||fst?'Nenhum resultado.':'Nenhum animal neste lote.<br>Toque no + para adicionar.'}</p></div>`;return}container.innerHTML=animals.map((a,i)=>{const insem=getInsemDate(a.num);const age=ageMonths(a.dataNasc);const parto=a.ultimoParto?ageDays(a.ultimoParto)+' dias':'';const prenha=a.prenhaData?ageDays(a.prenhaData)+' dias de prenhez':'';let details=[];if(a.raca)details.push('Raça: '+esc(a.raca));if(a.peso)details.push('Peso: '+esc(a.peso)+'kg');if(a.leite)details.push('Leite: '+esc(a.leite)+'L/dia');if(a.nomeMae)details.push('Mãe: '+esc(a.nomeMae));if(a.nomePai)details.push('Pai: '+esc(a.nomePai));let details2=[];if(insem)details2.push('Insem: '+insem);if(parto)details2.push('Parto: '+parto);if(prenha)details2.push(prenha);return`<div class="animal-row" style="animation-delay:${i*0.03}s"><div class="animal-info" style="cursor:pointer" onclick="openFicha('${a.id}')"><div><span class="num">#${esc(a.num)}</span><span class="name-text">${esc(a.nome)}</span>${age?`<span style="font-size:.68rem;color:var(--text3);margin-left:6px">${age} meses</span>`:''}</div><div class="badges"><span class="badge ${a.sexo==='Macho'?'badge-m':'badge-f'}">${esc(a.sexo)}</span><span class="badge badge-cat">${esc(a.cat)}</span><span class="badge badge-sit">${esc(a.sit)}</span>${a.origem?`<span class="badge badge-muco">${esc(a.origem)}</span>`:''}</div>${details.length?`<div class="detail">${details.join(' · ')}</div>`:''}${details2.length?`<div class="detail">${details2.join(' · ')}</div>`:''}</div><div class="animal-actions"><button class="edit-btn" style="background:var(--info);color:#fff" onclick="openHist('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></button><button class="edit-btn" onclick="editAnimalInLote('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="del-btn" onclick="delAnimalFromLote('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></div>`}).join('')}
+function renderLoteAnimals(){const l=DB.lotes.find(x=>x.id===currentLoteId);if(!l)return;let animals=[...l.animals];const q=(document.getElementById('searchLote')?.value||'').toLowerCase().trim();if(q)animals=animals.filter(a=>(a.num||'').toLowerCase().includes(q)||(a.nome||'').toLowerCase().includes(q));const fs=document.getElementById('filterSexo')?.value||'';const fc=document.getElementById('filterCat')?.value||'';const fst=document.getElementById('filterSit')?.value||'';if(fs)animals=animals.filter(a=>a.sexo===fs);if(fc)animals=animals.filter(a=>a.cat===fc);if(fst)animals=animals.filter(a=>a.sit===fst);sortByNum(animals);const container=document.getElementById('loteAnimals');if(!animals.length){container.innerHTML=`<div class="empty-state"><p>${q||fs||fc||fst?'Nenhum resultado.':'Nenhum animal neste lote.'}</p></div>`;return}container.innerHTML=animals.map((a,i)=>{const insem=getInsemDate(a.num);const age=ageMonths(a.dataNasc);const parto=a.ultimoParto?ageDays(a.ultimoParto)+' dias':'';const prenha=a.prenhaData?ageDays(a.prenhaData)+' dias de prenhez':'';let details=[];if(a.raca)details.push('Raça: '+esc(a.raca));if(a.peso)details.push('Peso: '+esc(a.peso)+'kg');if(a.leite)details.push('Leite: '+esc(a.leite)+'L/dia');if(a.nomeMae)details.push('Mãe: '+esc(a.nomeMae));if(a.nomePai)details.push('Pai: '+esc(a.nomePai));let details2=[];if(insem)details2.push('Insem: '+insem);if(parto)details2.push('Parto: '+parto);if(prenha)details2.push(prenha);return`<div class="animal-row" style="animation-delay:${i*0.03}s"><div class="animal-info" style="cursor:pointer" onclick="openFicha('${a.id}')"><div><span class="num">#${esc(a.num)}</span><span class="name-text">${esc(a.nome)}</span>${age?`<span style="font-size:.68rem;color:var(--text3);margin-left:6px">${age} meses</span>`:''}</div><div class="badges"><span class="badge ${a.sexo==='Macho'?'badge-m':'badge-f'}">${esc(a.sexo)}</span><span class="badge badge-cat">${esc(a.cat)}</span><span class="badge badge-sit">${esc(a.sit)}</span>${a.origem?`<span class="badge badge-muco">${esc(a.origem)}</span>`:''}</div>${details.length?`<div class="detail">${details.join(' · ')}</div>`:''}${details2.length?`<div class="detail">${details2.join(' · ')}</div>`:''}</div><div class="animal-actions"><button class="edit-btn" style="background:var(--info);color:#fff" onclick="openHist('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></button><button class="edit-btn" onclick="editAnimalInLote('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="del-btn" onclick="delAnimalFromLote('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></div>`}).join('')}
 
 // ========== ANIMAL FORM ==========
 function onSexoChange(){const sexo=document.getElementById('animalSexo').value;const catSel=document.getElementById('animalCat');catSel.innerHTML='';if(sexo==='Macho'){['Bezerro','Garrote','Boi','Touro'].forEach(o=>{catSel.innerHTML+=`<option value="${o}">${o}</option>`})}else{['Bezerra','Novilha','Vaca seca','Vaca em lactação'].forEach(o=>{catSel.innerHTML+=`<option value="${o}">${o}</option>`})}onCatChange()}
@@ -288,9 +288,59 @@ function renderFarmPanel(){
   c.innerHTML=`<div class="chart-container glass" style="margin-bottom:16px;padding:16px 18px"><div class="med-section-title"><span class="icon" style="background:rgba(27,209,113,0.15)">🏡</span>Painel do Sítio</div><div class="cost-grid">`+box(leiteTotal.toFixed(0)+'L','Leite/dia')+box(lact.length,'Em lactação')+box(taxa+'%','Taxa prenhez')+box(prenhas,'Prenhas')+box('R$ '+custoAli.toFixed(0),'Custo ração')+box(emTrat,'Em tratamento')+`</div></div>`;
 }
 
+// ========== AJUDA / INSTRUÇÕES POR PÁGINA ==========
+const HELP={
+  pageHome:{t:'Início',items:[
+    'Aqui você vê a saudação e a data do dia.',
+    '🔔 <b>Alertas</b>: medicação em andamento, carência de leite/carne (até quando NÃO vender o leite ou abater), parto previsto e lembrete de diagnóstico de prenhez.',
+    '🏡 <b>Painel do Sítio</b>: total de leite por dia, vacas em lactação, taxa de prenhez, nº de prenhas, custo de ração e animais em tratamento.',
+    '📊 <b>Gráfico do rebanho</b>: toque nos filtros (Categoria, Sexo, Situação, Raça, Lote, Medicado, Inseminado, Origem) para ver a divisão do rebanho.'
+  ]},
+  pageRebanho:{t:'Rebanho',items:[
+    '📁 <b>Novo lote</b>: botão da pasta, no topo à direita.',
+    '➕ <b>Adicionar animal</b>: botão de +.',
+    'Toque em <b>Abrir →</b> num lote para ver os animais dele.',
+    'Dentro do lote dá para <b>buscar</b> por nº/nome e <b>filtrar</b> por sexo, categoria e situação.',
+    'Em cada animal: 📈 (azul) abre o histórico de leite e peso, ✏️ (verde) edita e 🗑️ exclui.',
+    'Toque no animal para abrir a <b>Ficha 360°</b>: dados, família (mãe/pai/filhos), reprodução, medicações, alimentação, gráficos e linha do tempo.'
+  ]},
+  pageInseminacao:{t:'Inseminação',items:[
+    '➕ <b>Nova planilha</b> de inseminação (ex.: por mês ou por touro).',
+    'Abra a planilha e adicione inseminações: animal, data, tempo, touro, muco e observações.',
+    'Pode adicionar vários animais de uma vez.',
+    'Editar ✏️ ou excluir 🗑️ cada registro.',
+    'As inseminações alimentam o <b>calendário reprodutivo</b> (parto previsto e diagnóstico) na tela Início.'
+  ]},
+  pageMedicacao:{t:'Medicação',items:[
+    '➕ Registrar medicação para um <b>lote inteiro</b> ou <b>animais individuais</b>.',
+    'Escolha o tipo (vacina, vermífugo, tratamento), os medicamentos e doses, e as datas (início/fim).',
+    'Informe a <b>carência de leite</b> e de <b>carne</b> (em dias) — o app avisa até quando não vender o leite / não abater.',
+    'Editar ✏️ ou excluir 🗑️ os registros.'
+  ]},
+  pageAlimentacao:{t:'Alimentação',items:[
+    '➕ Registrar alimentação para um <b>lote</b> ou <b>animais individuais</b>.',
+    'Escolha as dietas, o consumo (kg por animal) e o valor por kg — o <b>custo é calculado automaticamente</b>.',
+    'Veja o custo total e por dieta.',
+    'Editar ✏️ ou excluir 🗑️ os registros.'
+  ]},
+  pageRelatorios:{t:'Relatórios',items:[
+    'Selecione as <b>fontes</b> (lotes, inseminação, medicação, alimentação).',
+    'Aplique <b>filtros</b> (categoria, sexo, situação, inseminadas) e escolha os <b>campos</b> do relatório.',
+    'Baixe em <b>PDF</b> (azul) ou <b>Excel</b> (verde).'
+  ]},
+  pageConfig:{t:'Configurações',items:[
+    'Edite seu <b>nome</b> e a <b>foto</b> de perfil.',
+    'Troque a sua <b>senha</b>.',
+    '💾 <b>Backup</b>: Exportar (salva um arquivo dos seus dados) e Importar (restaura de um arquivo).',
+    'Para usar <b>mais de uma conta</b> na mesma máquina: saia e entre com outro usuário.',
+    'Sair da conta (botão vermelho).'
+  ]}
+};
+function openHelp(){const pg=document.querySelector('.page.active');const id=pg?pg.id:'pageHome';const h=HELP[id]||HELP.pageHome;document.getElementById('helpTitle').textContent='Ajuda — '+h.t;document.getElementById('helpContent').innerHTML='<div class="card-sub" style="margin-bottom:12px;color:var(--text2)">O que você pode fazer nesta página:</div>'+h.items.map(i=>`<div class="card glass3" style="margin-bottom:8px;display:flex;gap:10px;align-items:flex-start"><span style="color:var(--green);font-weight:800;flex-shrink:0">•</span><div style="font-size:.82rem;line-height:1.5;color:var(--text)">${i}</div></div>`).join('');openModal('helpModal')}
+
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.6.5';
+const APP_VERSION = '3.7.0';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){

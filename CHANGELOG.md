@@ -2,6 +2,16 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.7.0] — 2026-06-26
+
+### Botão de ajuda (instruções por página)
+
+- Novo botão **?** (círculo bege) na barra superior, no canto direito. Ao tocar, mostra
+  **o que dá para fazer na página atual** — instruções específicas de Início, Rebanho,
+  Inseminação, Medicação, Alimentação, Relatórios e Configurações.
+- Removidos os textos de instrução das telas (ex.: "Toque no 📁 para criar um lote.");
+  os estados vazios agora mostram só "Nenhum lote criado.", "Nenhum animal neste lote." etc.
+
 ## [3.6.5] — 2026-06-26
 
 ### Cor
