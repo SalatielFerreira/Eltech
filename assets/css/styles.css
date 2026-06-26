@@ -6,7 +6,7 @@
 --glass:rgba(28,22,14,0.78);--glass2:rgba(28,22,14,0.6);--glass3:rgba(204,177,133,0.06);
 --gb:rgba(204,177,133,0.18);--gbs:rgba(204,177,133,0.35);
 --text:#f5eedf;--text2:rgba(238,224,201,0.78);--text3:rgba(238,224,201,0.45);
---danger:#ff4757;--warn:#ffa502;--info:#3498ff;--green:#1bd171;--brown:#c6a368;
+--danger:#ff4757;--warn:#ffa502;--info:#3498ff;--green:#1bd171;--brown:#9c7635;
 --r:20px;--rs:14px;--rx:8px;
 --shadow:0 8px 40px rgba(0,0,0,0.35);--glow:0 0 25px rgba(169,142,95,0.2);
 }
@@ -127,7 +127,7 @@ textarea.form-input{resize:vertical;min-height:90px}
 .card-actions .open-btn{background:var(--info);color:#fff}
 .card-actions button:active{transform:scale(0.92)}
 
-.empty-state{text-align:center;padding:50px 20px;color:var(--text3);font-size:.88rem;font-weight:500}
+.empty-state{text-align:center;padding:50px 20px;color:var(--brown);font-size:.88rem;font-weight:500}
 .empty-state svg{width:52px;height:52px;margin-bottom:14px;opacity:.3;color:var(--g500)}
 .empty-state p{margin-top:6px;font-size:.78rem}
 

@@ -2,6 +2,14 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.6.3] — 2026-06-25
+
+### Ajustes de cor
+
+- **Marrom mais escuro** nos títulos e na saudação.
+- Os textos de **estado vazio** (ex.: "Nenhum lote criado…") em todas as páginas também
+  passaram a usar o mesmo marrom.
+
 ## [3.6.2] — 2026-06-25
 
 ### Ajustes de cores
