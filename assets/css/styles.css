@@ -6,7 +6,7 @@
 --glass:rgba(28,22,14,0.78);--glass2:rgba(28,22,14,0.6);--glass3:rgba(204,177,133,0.06);
 --gb:rgba(204,177,133,0.18);--gbs:rgba(204,177,133,0.35);
 --text:#f5eedf;--text2:rgba(238,224,201,0.78);--text3:rgba(238,224,201,0.45);
---danger:#ff4757;--warn:#ffa502;--info:#3498ff;--green:#1bd171;--brown:#9c7635;
+--danger:#ff4757;--warn:#ffa502;--info:#3498ff;--green:#1bd171;--brown:#9c7635;--yellow:#e6a51f;
 --r:20px;--rs:14px;--rx:8px;
 --shadow:0 8px 40px rgba(0,0,0,0.35);--glow:0 0 25px rgba(169,142,95,0.2);
 }
@@ -84,7 +84,7 @@ textarea.form-input{resize:vertical;min-height:90px}
 .btn{width:100%;padding:14px;border:none;border-radius:var(--rs);font-family:'Sora',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden}
 .btn::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.08) 50%,transparent 70%);transform:translateX(-100%);transition:transform .5s}
 .btn:active::after{transform:translateX(100%)}
-.btn-primary{background:var(--g600);color:white;box-shadow:0 4px 16px rgba(143,115,80,0.45)}
+.btn-primary{background:var(--green);color:white;box-shadow:0 4px 16px rgba(27,209,113,0.4)}
 .btn-primary:active{transform:scale(0.97);box-shadow:0 2px 10px rgba(143,115,80,0.25)}
 .btn-outline{background:transparent;border:1.5px solid var(--gb);color:var(--g400)}
 .btn-outline:active{background:rgba(204,177,133,0.05)}
@@ -122,7 +122,7 @@ textarea.form-input{resize:vertical;min-height:90px}
 .card-sub{font-size:.75rem;color:var(--text2);margin-top:3px}
 .card-actions{display:flex;gap:8px;margin-top:12px}
 .card-actions button{padding:7px 14px;border-radius:var(--rx);border:none;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
-.card-actions .edit-btn{background:var(--g600);color:#fff}
+.card-actions .edit-btn{background:var(--green);color:#fff}
 .card-actions .del-btn{background:var(--danger);color:#fff}
 .card-actions .open-btn{background:var(--info);color:#fff}
 .card-actions button:active{transform:scale(0.92)}
@@ -147,13 +147,13 @@ textarea.form-input{resize:vertical;min-height:90px}
 .badge-muco{background:rgba(147,130,255,0.12);color:#b8afff;border:1px solid rgba(147,130,255,0.15)}
 .animal-actions{display:flex;gap:6px;flex-shrink:0;margin-left:10px}
 .animal-actions button{width:34px;height:34px;border-radius:var(--rx);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.animal-actions .edit-btn{background:var(--g600);color:#fff}
+.animal-actions .edit-btn{background:var(--green);color:#fff}
 .animal-actions .del-btn{background:var(--danger);color:#fff}
 .animal-actions button:active{transform:scale(0.85)}
 .animal-actions button svg{width:16px;height:16px}
 
-.back-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(204,177,133,0.08);border:1px solid rgba(204,177,133,0.15);border-radius:var(--rx);color:var(--g400);font-family:'Sora',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;margin-bottom:18px;padding:8px 14px;transition:all .2s}
-.back-btn:active{transform:scale(0.95);background:rgba(204,177,133,0.15)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--yellow);border:none;border-radius:var(--rx);color:#3a2c08;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:18px;padding:9px 16px;transition:all .2s}
+.back-btn:active{transform:scale(0.95);background:#cf9415}
 .back-btn svg{width:16px;height:16px}
 
 /* HOME */

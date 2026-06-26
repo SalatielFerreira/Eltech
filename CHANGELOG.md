@@ -2,6 +2,14 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.6.4] — 2026-06-25
+
+### Mais ajustes de cor
+
+- Botões **Editar** e **Salvar** (e os botões principais em geral) agora em **verde**.
+- Botão **Voltar** agora **sólido amarelo**.
+- Mantido o padrão: mesmo verde, mesmo azul, mesmo amarelo e mesmo marrom em todo o app.
+
 ## [3.6.3] — 2026-06-25
 
 ### Ajustes de cor
