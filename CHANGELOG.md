@@ -2,6 +2,18 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.8.0] — 2026-06-26
+
+### Foto dos animais
+
+- Novo campo de **foto** no cadastro do animal (no celular abre direto a **câmera**).
+- As fotos são **comprimidas automaticamente** e guardadas em um banco próprio do aparelho
+  (**IndexedDB**), feito para aguentar **muitas fotos** sem encher o armazenamento.
+- A foto aparece como **miniatura na lista** de animais e em **tamanho grande na Ficha 360°**.
+- Em Configurações: **Exportar fotos / Importar fotos** (as fotos ficam à parte do backup
+  normal, então use esses botões ao trocar de aparelho).
+- Removido o emoji 🏡 do título "Painel do Sítio".
+
 ## [3.7.0] — 2026-06-26
 
 ### Botão de ajuda (instruções por página)
