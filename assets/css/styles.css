@@ -6,7 +6,7 @@
 --glass:rgba(28,22,14,0.78);--glass2:rgba(28,22,14,0.6);--glass3:rgba(204,177,133,0.06);
 --gb:rgba(204,177,133,0.18);--gbs:rgba(204,177,133,0.35);
 --text:#f5eedf;--text2:rgba(238,224,201,0.78);--text3:rgba(238,224,201,0.45);
---danger:#ff4757;--warn:#ffa502;--info:#3498ff;
+--danger:#ff4757;--warn:#ffa502;--info:#3498ff;--green:#1bd171;--brown:#c6a368;
 --r:20px;--rs:14px;--rx:8px;
 --shadow:0 8px 40px rgba(0,0,0,0.35);--glow:0 0 25px rgba(169,142,95,0.2);
 }
@@ -108,8 +108,8 @@ textarea.form-input{resize:vertical;min-height:90px}
 
 /* SECTION */
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.section-header h2{font-size:1.4rem;font-weight:800;letter-spacing:.3px;color:#ffffff}
-.add-btn{width:46px;height:46px;border-radius:14px;background:var(--g600);border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(169,142,95,0.45),0 0 0 3px rgba(169,142,95,0.1);transition:all .25s}
+.section-header h2{font-size:1.4rem;font-weight:800;letter-spacing:.3px;color:var(--brown)}
+.add-btn{width:46px;height:46px;border-radius:14px;background:var(--green);border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(27,209,113,0.4),0 0 0 3px rgba(27,209,113,0.12);transition:all .25s}
 .add-btn:active{transform:scale(0.88);box-shadow:0 2px 10px rgba(143,115,80,0.3)}
 .add-btn svg{width:22px;height:22px;stroke-width:2.5}
 

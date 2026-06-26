@@ -2,6 +2,17 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.6.2] — 2026-06-25
+
+### Ajustes de cores
+
+- **Saudação e data na Home** e **títulos das páginas** (Rebanho, Inseminação, Medicação,
+  Alimentação) agora em **marrom/bege**.
+- **Botões de adicionar** (Novo Lote, Nova Planilha, Adicionar Animal/Medicação/Alimentação)
+  em **verde** (o mesmo verde do gráfico de pizza).
+- **Relatório:** botão **PDF azul** e **Excel verde**. **Backup:** **Exportar azul** e **Importar verde**.
+- Padronizado: o mesmo verde, o mesmo azul e o mesmo marrom em todo o app.
+
 ## [3.6.0] — 2026-06-25
 
 ### Tema bege escuro
