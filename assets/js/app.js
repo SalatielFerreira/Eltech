@@ -60,8 +60,9 @@ function filterAnimalSelect(searchId,selectId,type){
 
 // ========== NAV ==========
 let currentLoteId=null;let editAniId=null;let editLoteId=null;
+let pageHistory=[];let navLock=false;
 function refreshCurrentPage(){const a=document.querySelector('.page.active');if(!a)return;const id=a.id;if(id==='pageHome')renderHome();else if(id==='pageRebanho'){if(!document.getElementById('loteDetail').classList.contains('hidden'))renderLoteAnimals();else renderLotes()}else if(id==='pageInseminacao'){if(!document.getElementById('insemDetail').classList.contains('hidden'))renderAnimals('inseminacao');else renderPlanilhas('inseminacao')}else if(id==='pageMedicacao')renderMedDirect();else if(id==='pageAlimentacao')renderAliDirect();else if(id==='pageRelatorios')populateReportSources();toast('Atualizado!','info')}
-function goPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===id));document.querySelector('.page-content').scrollTop=0;if(id==='pageHome')renderHome();if(id==='pageRebanho'){document.getElementById('rebanhoMain').classList.remove('hidden');document.getElementById('loteDetail').classList.add('hidden');renderLotes()}if(id==='pageInseminacao'){document.getElementById('insemList').classList.remove('hidden');document.getElementById('insemDetail').classList.add('hidden');renderPlanilhas('inseminacao')}if(id==='pageMedicacao')renderMedDirect();if(id==='pageAlimentacao')renderAliDirect();if(id==='pageRelatorios')populateReportSources()}
+function goPage(id){const _cur=document.querySelector('.page.active');if(!navLock&&_cur&&_cur.id!==id){pageHistory.push(_cur.id);if(pageHistory.length>25)pageHistory.shift();ensureBackBuffer()}document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===id));document.querySelector('.page-content').scrollTop=0;if(id==='pageHome')renderHome();if(id==='pageRebanho'){document.getElementById('rebanhoMain').classList.remove('hidden');document.getElementById('loteDetail').classList.add('hidden');renderLotes()}if(id==='pageInseminacao'){document.getElementById('insemList').classList.remove('hidden');document.getElementById('insemDetail').classList.add('hidden');renderPlanilhas('inseminacao')}if(id==='pageMedicacao')renderMedDirect();if(id==='pageAlimentacao')renderAliDirect();if(id==='pageRelatorios')populateReportSources()}
 
 // ========== MODAL ==========
 function openModal(id){document.getElementById(id).classList.add('show');if(id==='animalModal'&&!editAniId){document.getElementById('animalModalTitle').textContent='Adicionar Animal';initAnimalForm();populateLoteSelect('animalLote')}if(id==='loteModal'&&!editLoteId)document.getElementById('loteModalTitle').textContent='Novo Lote';if(id==='medAnimalModal'){populateMedLoteSelect();populateMedSelect();medMode='lote';setMedMode('lote')}if(id==='aliAnimalModal'){populateAliLoteSelect();populateAliAnimalSelect2();aliMode='lote';setAliMode('lote')}if(id==='insemAnimalModal'){populateInsemPlanSelect();populateInsemSelect()}}
@@ -362,7 +363,7 @@ function openHelp(){const pg=document.querySelector('.page.active');const id=pg?
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.10.0';
+const APP_VERSION = '3.11.0';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
@@ -424,8 +425,7 @@ window.addEventListener('popstate',function(){
     if(ld&&!ld.classList.contains('hidden')){backToLotes();ensureBackBuffer();return}
     const idt=document.getElementById('insemDetail');
     if(idt&&!idt.classList.contains('hidden')){backToList();ensureBackBuffer();return}
-    const active=document.querySelector('.page.active');
-    if(active&&active.id!=='pageHome'){goPage('pageHome');ensureBackBuffer();return}
+    if(pageHistory.length){navLock=true;goPage(pageHistory.pop());navLock=false;ensureBackBuffer();return}
     if(Date.now()-_lastBack<2000)return;
     _lastBack=Date.now();toast('Toque em voltar novamente para sair','info');ensureBackBuffer();return;
   }
