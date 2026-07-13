@@ -363,7 +363,7 @@ function openHelp(){const pg=document.querySelector('.page.active');const id=pg?
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.11.0';
+const APP_VERSION = '3.11.1';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
