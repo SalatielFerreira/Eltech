@@ -129,7 +129,8 @@ textarea.form-input{resize:vertical;min-height:90px}
 .card-title{font-weight:700;font-size:.92rem;letter-spacing:.2px}
 .card-sub{font-size:.75rem;color:var(--text2);margin-top:3px}
 .card-actions{display:flex;gap:8px;margin-top:12px}
-.card-actions button{padding:7px 14px;border-radius:var(--rx);border:none;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.card-actions button{padding:7px 14px;border-radius:var(--rx);border:none;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px;display:inline-flex;align-items:center;gap:5px}
+.card-actions button svg{width:14px;height:14px;flex-shrink:0}
 .card-actions .edit-btn{background:var(--green);color:#fff}
 .card-actions .del-btn{background:var(--danger);color:#fff}
 .card-actions .open-btn{background:var(--info);color:#fff}
