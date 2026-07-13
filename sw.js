@@ -9,7 +9,7 @@
    aviso "Nova versão disponível" para quem já tem o app aberto.
    (Mantenha igual em app.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '3.8.1';
+const VERSION = '3.9.0';
 const CACHE = 'eltech-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages em qualquer subpasta.

@@ -2,6 +2,16 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [3.9.0] — 2026-07-13
+
+### Enviar backup (compartilhar)
+
+- Novos botões **"Enviar backup"** e **"Enviar fotos"** em Configurações: abrem o menu de
+  compartilhar do celular, permitindo salvar direto no **Google Drive**, WhatsApp, e-mail etc.
+  com um toque — **sem nenhuma configuração**.
+- Em aparelhos que não suportam compartilhar arquivos (ex.: alguns computadores), o botão
+  automaticamente **baixa** o arquivo como alternativa.
+
 ## [3.8.0] — 2026-06-26
 
 ### Foto dos animais
