@@ -72,7 +72,7 @@ body::after{content:none}
 #loginPage.hidden{display:none}
 .login-logo{position:relative;z-index:1;margin-bottom:40px;text-align:center}
 .login-logo h1{font-family:'JetBrains Mono',monospace;font-size:3.2rem;letter-spacing:12px;font-weight:800;color:#ffffff;text-shadow:0 0 60px rgba(204,177,133,0.4),0 0 120px rgba(204,177,133,0.15),0 2px 4px rgba(0,0,0,0.3);animation:float 4s ease-in-out infinite}
-.login-logo p{font-size:.8rem;color:var(--text3);letter-spacing:3px;margin-top:6px;font-weight:400}
+.login-logo p{font-size:.8rem;color:var(--brown);letter-spacing:3px;margin-top:6px;font-weight:600}
 .login-box{width:100%;max-width:400px;border-radius:var(--r);padding:28px 22px;position:relative;z-index:1;animation:scaleIn .5s ease}
 .login-tabs{display:flex;gap:3px;margin-bottom:24px;background:rgba(0,0,0,0.3);border-radius:var(--rs);padding:3px;position:relative}
 .login-tab{flex:1;padding:11px 6px;border:none;background:none;color:var(--text3);font-family:'Sora',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border-radius:calc(var(--rs) - 2px);transition:all .3s ease;position:relative;z-index:1}
