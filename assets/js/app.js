@@ -313,9 +313,9 @@ function importPhotos(e){const file=e.target.files[0];if(!file)return;const read
 // ========== TOUROS + BUSCA GLOBAL ==========
 // Reordenar lotes arrastando (toque + mouse)
 let _ld=null;
-function loteDragStart(e,handle){e.preventDefault();const card=handle.closest('.card');if(!card)return;_ld={card,handle,startY:e.clientY};card.classList.add('dragging');card.style.transition='none';try{handle.setPointerCapture(e.pointerId)}catch(_){}handle.addEventListener('pointermove',loteDragMove);handle.addEventListener('pointerup',loteDragEnd);handle.addEventListener('pointercancel',loteDragEnd)}
-function loteDragMove(e){if(!_ld)return;_ld.card.style.transform='translateY('+(e.clientY-_ld.startY)+'px)'}
-function loteDragEnd(e){if(!_ld)return;const card=_ld.card,handle=_ld.handle,y=(e&&typeof e.clientY==='number')?e.clientY:_ld.startY;handle.removeEventListener('pointermove',loteDragMove);handle.removeEventListener('pointerup',loteDragEnd);handle.removeEventListener('pointercancel',loteDragEnd);card.classList.remove('dragging');card.style.transform='';card.style.transition='';_ld=null;const cont=document.getElementById('lotesList');if(!cont)return;const others=[...cont.querySelectorAll('.card[data-lote-id]')].filter(c=>c!==card);let before=null;for(const c of others){const r=c.getBoundingClientRect();if(y<r.top+r.height/2){before=c;break}}if(before)cont.insertBefore(card,before);else cont.appendChild(card);const ids=[...cont.querySelectorAll('.card[data-lote-id]')].map(c=>c.getAttribute('data-lote-id'));ids.forEach((id,i)=>{const l=DB.lotes.find(x=>x.id===id);if(l)l.ordem=i});save();renderLotes()}
+function loteDragStart(e,handle){e.preventDefault();const card=handle.closest('.card');if(!card)return;_ld={card,handle};card.classList.add('dragging');try{handle.setPointerCapture(e.pointerId)}catch(_){}handle.addEventListener('pointermove',loteDragMove);handle.addEventListener('pointerup',loteDragEnd);handle.addEventListener('pointercancel',loteDragEnd)}
+function loteDragMove(e){if(!_ld)return;const cont=document.getElementById('lotesList');if(!cont)return;const cards=[...cont.querySelectorAll('.card:not(.dragging)')];let after=null;for(const c of cards){const r=c.getBoundingClientRect();if(e.clientY<r.top+r.height/2){after=c;break}}if(after)cont.insertBefore(_ld.card,after);else cont.appendChild(_ld.card)}
+function loteDragEnd(){if(!_ld)return;const card=_ld.card,handle=_ld.handle;handle.removeEventListener('pointermove',loteDragMove);handle.removeEventListener('pointerup',loteDragEnd);handle.removeEventListener('pointercancel',loteDragEnd);card.classList.remove('dragging');_ld=null;const cont=document.getElementById('lotesList');if(!cont)return;const ids=[...cont.querySelectorAll('.card[data-lote-id]')].map(c=>c.getAttribute('data-lote-id'));ids.forEach((id,i)=>{const l=DB.lotes.find(x=>x.id===id);if(l)l.ordem=i});save()}
 let editTouroId=null;
 function populateTouroOptions(){const dl=document.getElementById('touroOptions');if(!dl)return;dl.innerHTML=(DB.touros||[]).map(t=>`<option value="${esc(t.nome)}">`).join('')}
 function openTouros(){editTouroId=null;['touroNome','touroRaca','touroGS'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});renderTouros();openModal('tourosModal')}
@@ -378,7 +378,7 @@ function openHelp(){const pg=document.querySelector('.page.active');const id=pg?
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.14.2';
+const APP_VERSION = '3.14.3';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
