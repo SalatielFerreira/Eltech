@@ -33,7 +33,7 @@ function isValidName(n){return/^[a-zA-ZÀ-ÿ\s]{1,15}$/.test(n)&&n.trim().length
 document.getElementById('regPass').addEventListener('input',function(){const p=this.value;const set=(id,ok)=>{const el=document.getElementById(id);el.style.color=ok?'var(--g400)':'var(--text3)';el.textContent=(ok?'✓ ':'◯ ')+el.textContent.substring(2)};set('reqUpper',/[A-Z]/.test(p));set('reqNumber',/[0-9]/.test(p));set('reqSpecial',/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p));set('reqLen',p.length>=6)});
 async function doLogin(){const input=document.getElementById('loginEmail').value.trim();const p=document.getElementById('loginPass').value;if(!input||!p)return toast('Preencha todos os campos','error');if(!ACCOUNTS.length)return toast('Nenhuma conta cadastrada.','error');const il=input.toLowerCase();let acc=ACCOUNTS.find(a=>a.user.email&&a.user.email.toLowerCase()===il)||ACCOUNTS.find(a=>a.user.name&&a.user.name.toLowerCase()===il);if(!acc)return toast('Usuário não encontrado','error');const stored=acc.user.password;let ok;if(isHash(stored)){ok=(await hashPass(p))===stored}else{/* conta antiga em texto puro: valida e migra para hash */ok=(p===stored);if(ok)acc.user.password=await hashPass(p)}if(!ok)return toast('Senha incorreta','error');DB=acc;localStorage.setItem('eltech_active',acc.id);if(document.getElementById('loginKeep')?.checked){localStorage.setItem('eltech_session','1')}else{localStorage.removeItem('eltech_session')}upsertActive();persistAccounts();enterApp()}
 async function doRegister(){const name=document.getElementById('regName').value.trim();const email=document.getElementById('regEmail').value.trim();const pass=document.getElementById('regPass').value;const passConfirm=document.getElementById('regPassConfirm').value;if(!name||!email||!pass||!passConfirm)return toast('Preencha todos os campos','error');if(!isValidName(name))return toast('Nome: apenas letras, máx. 15 caracteres','error');if(!isValidEmail(email))return toast('Email inválido','error');if(!isValidPassword(pass))return toast('Senha precisa de: maiúscula, número e caractere especial','error');if(pass!==passConfirm)return toast('As senhas não coincidem','error');if(ACCOUNTS.some(a=>a.user&&a.user.email&&a.user.email.toLowerCase()===email.toLowerCase()))return toast('Já existe uma conta com este email','error');const acc=newAccount();acc.user={email,name,password:await hashPass(pass),phone:'',avatar:''};ACCOUNTS.push(acc);persistAccounts();['regName','regEmail','regPass','regPassConfirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});toast('Conta criada! Faça login.');switchLoginTab('login');const le=document.getElementById('loginEmail');if(le)le.value=email}
-function enterApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').style.display='flex';document.getElementById('profileName').value=DB.user.name||'Usuário';if(DB.user.avatar){document.getElementById('avatarImg').src=DB.user.avatar;document.getElementById('avatarImg').style.display='block';document.getElementById('avatarPlaceholder').style.display='none'}renderHome();checkBackupReminder()}
+function enterApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').style.display='flex';document.getElementById('profileName').value=DB.user.name||'Usuário';if(DB.user.avatar){document.getElementById('avatarImg').src=DB.user.avatar;document.getElementById('avatarImg').style.display='block';document.getElementById('avatarPlaceholder').style.display='none'}renderHome();checkBackupReminder();ensureBackBuffer()}
 function doLogout(){localStorage.removeItem('eltech_session');currentLoteId=null;editAniId=null;editLoteId=null;currentPlanId=null;editPlanId=null;tempMedAnimals=[];tempAliAnimals=[];tempInsemAnimals=[];document.getElementById('loginPass').value='';document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').style.display='none'}
 
 // ========== HELPERS ==========
@@ -362,7 +362,7 @@ function openHelp(){const pg=document.querySelector('.page.active');const id=pg?
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.9.6';
+const APP_VERSION = '3.10.0';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
@@ -407,5 +407,29 @@ function installApp(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.
 
 // ========== INIT ==========
 renderLotes();
+
+// Tecla Enter envia o login / cadastro
+['loginEmail','loginPass'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin()}})});
+['regName','regEmail','regPass','regPassConfirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doRegister()}})});
+
+// Botão Voltar do celular: fecha modal / volta de tela em vez de sair do app
+function ensureBackBuffer(){try{if(!(history.state&&history.state.eltechBuffer))history.pushState({eltechBuffer:true},'')}catch(e){}}
+let _lastBack=0;
+window.addEventListener('popstate',function(){
+  const modal=document.querySelector('.modal-overlay.show');
+  if(modal){closeModal(modal.id);ensureBackBuffer();return}
+  const main=document.getElementById('mainApp');
+  if(main&&main.style.display!=='none'){
+    const ld=document.getElementById('loteDetail');
+    if(ld&&!ld.classList.contains('hidden')){backToLotes();ensureBackBuffer();return}
+    const idt=document.getElementById('insemDetail');
+    if(idt&&!idt.classList.contains('hidden')){backToList();ensureBackBuffer();return}
+    const active=document.querySelector('.page.active');
+    if(active&&active.id!=='pageHome'){goPage('pageHome');ensureBackBuffer();return}
+    if(Date.now()-_lastBack<2000)return;
+    _lastBack=Date.now();toast('Toque em voltar novamente para sair','info');ensureBackBuffer();return;
+  }
+});
+
 // Auto-login: se "Manter conectado" estiver ativo e houver conta cadastrada.
 if(localStorage.getItem('eltech_session')==='1'&&DB.user&&DB.user.email){enterApp()}
