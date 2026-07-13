@@ -88,6 +88,8 @@
             <button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
           </div>
         </div>
+        <div class="search-bar"><input type="text" id="searchRebanho" placeholder="Buscar animal por nº ou nome (todos os lotes)..." oninput="searchRebanho()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <div id="rebanhoSearchResults" style="display:none"></div>
         <div id="lotesList"></div>
       </div>
       <div id="loteDetail" class="hidden">
@@ -117,6 +119,7 @@
           <div style="display:flex;gap:8px">
             <button class="add-btn" onclick="openModal('planilhaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></button>
             <button class="add-btn" onclick="openInsemAnimalDirect()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button class="add-btn" onclick="openTouros()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
           </div>
         </div>
         <div id="insemPlanilhas"></div>
@@ -262,7 +265,7 @@
   <div class="form-group"><label>Pai (touro do rebanho ou inseminação)</label><select class="form-input" id="animalPaiSelect"><option value="">Selecione...</option></select></div>
 </div>
 <div id="paiMaeComprado" class="hidden">
-  <div class="flex-row"><div class="form-group"><label>Nome da Mãe</label><input class="form-input" id="animalNomeMae" placeholder="Nome da mãe"></div><div class="form-group"><label>Nome do Pai</label><input class="form-input" id="animalNomePai" placeholder="Nome do pai"></div></div>
+  <div class="flex-row"><div class="form-group"><label>Nome da Mãe</label><input class="form-input" id="animalNomeMae" placeholder="Nome da mãe"></div><div class="form-group"><label>Nome do Pai</label><input class="form-input" id="animalNomePai" list="touroOptions" placeholder="Nome do pai"></div></div>
 </div>
 <div class="flex-row"><div class="form-group"><label>Peso (kg)</label><input class="form-input" id="animalPeso" type="number" step="0.1" placeholder="Ex: 450"></div><div class="form-group" id="leiteGroup"><label>Prod. Média Leite (L/dia)</label><input class="form-input" id="animalLeite" type="number" step="0.1" placeholder="Ex: 12.5"></div></div>
 <div class="form-group" id="partoGroup" style="display:none"><label>Data do Último Parto</label><input class="form-input" id="animalUltimoParto" type="date"></div>
@@ -275,12 +278,19 @@
 <div id="insemSelectedAnimals" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
 <button class="btn btn-outline btn-xs mb-16" onclick="addInsemAnimal()">+ Adicionar Animal</button>
 <div class="form-group"><label>Data do Procedimento</label><input class="form-input" id="insemData" type="date"></div>
-<div class="flex-row"><div class="form-group"><label>Tempo de Execução</label><input class="form-input" id="insemTempo" placeholder="Ex: 5 min"></div><div class="form-group"><label>Touro Utilizado</label><input class="form-input" id="insemTouro" placeholder="Nome/Código"></div></div>
+<div class="flex-row"><div class="form-group"><label>Tempo de Execução</label><input class="form-input" id="insemTempo" placeholder="Ex: 5 min"></div><div class="form-group"><label>Touro Utilizado</label><input class="form-input" id="insemTouro" list="touroOptions" placeholder="Nome/Código"></div></div>
 <div class="form-group"><label>Muco</label><select class="form-input" id="insemMuco"><option>Bom</option><option>Sujo</option><option>Ruim</option></select></div>
 <div class="form-group"><label>Observação</label><textarea class="form-input" id="insemObs" placeholder="Observações..."></textarea></div>
 <button class="btn btn-primary mt-8" onclick="saveInsemAnimal()">Salvar</button></div></div>
 
 <div class="modal-overlay" id="helpModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="helpTitle">Ajuda</h3><button class="modal-close" onclick="closeModal('helpModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="helpContent"></div></div></div>
+<datalist id="touroOptions"></datalist>
+<div class="modal-overlay" id="tourosModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Touros</h3><button class="modal-close" onclick="closeModal('tourosModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<div class="form-group"><label>Nome do touro</label><input class="form-input" id="touroNome" placeholder="Nome"></div>
+<div class="flex-row"><div class="form-group"><label>Raça</label><input class="form-input" id="touroRaca" placeholder="Ex.: Girolando"></div><div class="form-group"><label>Grau de Sangue</label><input class="form-input" id="touroGS" placeholder="Ex.: 5/8, PO"></div></div>
+<button class="btn btn-primary btn-sm mb-16" style="background:var(--green);color:#fff" onclick="saveTouro()">+ Adicionar touro</button>
+<div id="tourosList"></div>
+</div></div>
 <div class="modal-overlay" id="fichaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
 <div class="modal-overlay" id="histModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="histModalTitle">Histórico</h3><button class="modal-close" onclick="closeModal('histModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="histContent"></div></div></div>
 <div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
