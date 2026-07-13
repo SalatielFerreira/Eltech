@@ -205,7 +205,7 @@
         <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Alterar Senha</h4>
         <div class="form-group"><label>Senha atual</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgOldPass" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgOldPass',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
         <div class="form-group"><label>Nova senha</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgNewPass" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgNewPass',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-        <button class="btn btn-primary" style="background:#a3844e;color:#fff;box-shadow:0 4px 16px rgba(163,132,78,0.45)" onclick="changePassword()">Salvar Nova Senha</button>
+        <button class="btn btn-primary" style="background:#a3844e;color:#fff;box-shadow:0 4px 16px rgba(163,132,78,0.45);display:flex;align-items:center;justify-content:center;gap:8px" onclick="changePassword()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar Nova Senha</button>
       </div>
 
       <div class="config-section glass2">
@@ -221,9 +221,7 @@
         </div>
       </div>
 
-      <button class="btn btn-danger mt-16" style="margin-bottom:40px" onclick="doLogout()">
-        Sair da Conta
-      </button>
+      <button class="btn btn-danger mt-16" style="margin-bottom:40px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="doLogout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair da Conta</button>
     </div>
   </div>
 
