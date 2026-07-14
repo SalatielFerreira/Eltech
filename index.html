@@ -113,10 +113,10 @@
         <button class="back-btn" onclick="backToLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
         <div class="section-header"><h2 id="loteDetailTitle"></h2>
           <div style="display:flex;gap:8px">
-            <button class="add-btn"  onclick="toggleLoteFilter()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
             <button class="add-btn" onclick="openAnimalForLote()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
           </div>
         </div>
+        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchLote" placeholder="Buscar por nº ou nome..." oninput="renderLoteAnimals()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleLoteFilter()" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
         <div id="loteFilterBar" class="hidden" style="margin-bottom:14px">
           <div class="flex-row" style="gap:6px">
             <select class="form-input" id="filterSexo" onchange="renderLoteAnimals()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select>
@@ -124,7 +124,6 @@
             <select class="form-input" id="filterSit" onchange="renderLoteAnimals()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select>
           </div>
         </div>
-        <div class="search-bar"><input type="text" id="searchLote" placeholder="Buscar por nº ou nome..." oninput="renderLoteAnimals()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
         <div id="loteAnimals"></div>
       </div>
     </div>
