@@ -88,9 +88,29 @@
             <button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
           </div>
         </div>
-        <div class="search-bar"><input type="text" id="searchRebanho" placeholder="Buscar animal por nº ou nome (todos os lotes)..." oninput="searchRebanho()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-        <div id="rebanhoSearchResults" style="display:none"></div>
-        <div id="lotesList"></div>
+        <div class="folder glass2" id="folderAnimais">
+          <div class="folder-head" onclick="toggleFolder('folderAnimais')"><div class="folder-title">🐄 Todos os Animais <span class="folder-count" id="cntAnimais">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="folder-body">
+            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchAnimais" placeholder="Buscar por nº ou nome..." oninput="renderAnimaisFolder()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterAnimais')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
+            <div id="filterAnimais" class="hidden" style="margin-bottom:12px"><div class="flex-row" style="gap:6px"><select class="form-input" id="fAnSexo" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select><select class="form-input" id="fAnCat" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select><select class="form-input" id="fAnSit" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select></div></div>
+            <div id="animaisList"></div>
+          </div>
+        </div>
+        <div class="folder glass2 open" id="folderLotes">
+          <div class="folder-head" onclick="toggleFolder('folderLotes')"><div class="folder-title">📁 Lotes <span class="folder-count" id="cntLotes">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="folder-body">
+            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchLotesFolder" placeholder="Buscar lote pelo nome..." oninput="renderLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div></div>
+            <div id="lotesList"></div>
+          </div>
+        </div>
+        <div class="folder glass2" id="folderBaixas">
+          <div class="folder-head" onclick="toggleFolder('folderBaixas')"><div class="folder-title">📕 Baixas <span class="folder-count" id="cntBaixas">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="folder-body">
+            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchBaixas" placeholder="Buscar por nº ou nome..." oninput="renderBaixas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterBaixas')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
+            <div id="filterBaixas" class="hidden" style="margin-bottom:12px"><select class="form-input" id="fBaixaTipo" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Todos os motivos</option><option value="venda">Venda</option><option value="morte">Morte</option></select></div>
+            <div id="baixasList"></div>
+          </div>
+        </div>
       </div>
       <div id="loteDetail" class="hidden">
         <button class="back-btn" onclick="backToLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
@@ -285,6 +305,13 @@
 
 <div class="modal-overlay" id="helpModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="helpTitle">Ajuda</h3><button class="modal-close" onclick="closeModal('helpModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="helpContent"></div></div></div>
 <datalist id="touroOptions"></datalist>
+<div class="modal-overlay" id="baixaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Dar baixa no animal</h3><button class="modal-close" onclick="closeModal('baixaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<div id="baixaAnimalName" style="font-weight:700;color:var(--text);margin-bottom:14px"></div>
+<div class="form-group"><label>Motivo</label><div class="flex-row" style="gap:8px"><button type="button" class="filter-chip" id="baixaTipoVenda" onclick="setBaixaTipo('venda')" style="flex:1;padding:11px">💰 Venda</button><button type="button" class="filter-chip" id="baixaTipoMorte" onclick="setBaixaTipo('morte')" style="flex:1;padding:11px">⚰️ Morte</button></div></div>
+<div class="form-group"><label>Data</label><input class="form-input" id="baixaData" type="date"></div>
+<div class="form-group" id="baixaValorGroup"><label>Valor da venda (R$)</label><input class="form-input" id="baixaValor" type="number" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+<div class="form-group"><label>Observações</label><textarea class="form-input" id="baixaObs" placeholder="Opcional"></textarea></div>
+<button class="btn btn-danger mt-8" onclick="confirmBaixa()">Confirmar baixa</button></div></div>
 <div class="modal-overlay" id="tourosModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Touros</h3><button class="modal-close" onclick="closeModal('tourosModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Nome do touro</label><input class="form-input" id="touroNome" placeholder="Nome"></div>
 <div class="flex-row"><div class="form-group"><label>Raça</label><input class="form-input" id="touroRaca" placeholder="Ex.: Girolando"></div><div class="form-group"><label>Grau de Sangue</label><input class="form-input" id="touroGS" placeholder="Ex.: 5/8, PO"></div></div>

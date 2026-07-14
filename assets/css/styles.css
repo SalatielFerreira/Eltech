@@ -285,3 +285,18 @@ canvas#pieChart{max-width:240px;max-height:240px;margin:0 auto;display:block}
 .lote-move button{background:rgba(204,177,133,0.14);border:none;color:var(--g400);width:32px;height:22px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .lote-move button svg{width:16px;height:16px}
 .lote-move button:active{transform:scale(0.88);background:rgba(204,177,133,0.28)}
+
+/* Pastas do Rebanho (Animais / Lotes / Baixas) */
+.folder{margin-bottom:12px;overflow:hidden;border-radius:var(--rs)}
+.folder-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;cursor:pointer}
+.folder-title{font-weight:700;font-size:.95rem;color:var(--text);display:flex;align-items:center;gap:8px}
+.folder-count{background:rgba(204,177,133,0.2);color:var(--g300);font-size:.7rem;font-weight:700;padding:2px 9px;border-radius:99px}
+.folder-chev{width:20px;height:20px;color:var(--g400);flex-shrink:0;transition:transform .25s ease}
+.folder.open .folder-chev{transform:rotate(180deg)}
+.folder-body{display:none;padding:0 12px 12px}
+.folder.open .folder-body{display:block}
+.folder-tools{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
+.folder-tools .search-bar{flex:1;margin-bottom:0}
+.folder-tools>button{width:44px;flex-shrink:0;background:rgba(204,177,133,0.14);border:none;color:var(--g400);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.folder-tools>button svg{width:20px;height:20px}
+.folder-tools>button:active{transform:scale(0.9)}
