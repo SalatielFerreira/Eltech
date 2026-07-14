@@ -297,7 +297,7 @@ canvas#pieChart{max-width:240px;max-height:240px;margin:0 auto;display:block}
 .folder.open .folder-body{display:block}
 .folder-tools{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
 .folder-tools .search-bar{flex:1;margin-bottom:0}
-.folder-tools>button{width:44px;flex-shrink:0;background:rgba(204,177,133,0.14);border:none;color:var(--g400);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.folder-tools>button{width:44px;flex-shrink:0;background:var(--brown);border:none;color:#fff;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .folder-tools>button svg{width:20px;height:20px}
 .folder-tools>button:active{transform:scale(0.9)}
 
