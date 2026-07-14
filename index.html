@@ -81,36 +81,33 @@
 
     <!-- REBANHO -->
     <div class="page" id="pageRebanho">
-      <div id="rebanhoMain">
-        <div class="section-header"><h2>Rebanho</h2>
-          <div style="display:flex;gap:8px">
-            <button class="add-btn"  onclick="openModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></button>
-            <button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
-          </div>
+      <div id="rebanhoHome">
+        <div class="section-header"><h2>Rebanho</h2></div>
+        <div class="rebanho-tiles">
+          <button class="rtile" onclick="openRebanhoView('animais')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span class="rtile-label">Todos os Animais</span><span class="rtile-count" id="cntAnimais">0</span></button>
+          <button class="rtile" onclick="openRebanhoView('lotes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span class="rtile-label">Lotes</span><span class="rtile-count" id="cntLotes">0</span></button>
+          <button class="rtile wide" onclick="openRebanhoView('baixas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span class="rtile-label">Baixas</span><span class="rtile-count" id="cntBaixas">0</span></button>
         </div>
-        <div class="folder glass2" id="folderAnimais">
-          <div class="folder-head" onclick="toggleFolder('folderAnimais')"><div class="folder-title">🐄 Todos os Animais <span class="folder-count" id="cntAnimais">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
-          <div class="folder-body">
-            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchAnimais" placeholder="Buscar por nº ou nome..." oninput="renderAnimaisFolder()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterAnimais')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
-            <div id="filterAnimais" class="hidden" style="margin-bottom:12px"><div class="flex-row" style="gap:6px"><select class="form-input" id="fAnSexo" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select><select class="form-input" id="fAnCat" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select><select class="form-input" id="fAnSit" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select></div></div>
-            <div id="animaisList"></div>
-          </div>
-        </div>
-        <div class="folder glass2 open" id="folderLotes">
-          <div class="folder-head" onclick="toggleFolder('folderLotes')"><div class="folder-title">📁 Lotes <span class="folder-count" id="cntLotes">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
-          <div class="folder-body">
-            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchLotesFolder" placeholder="Buscar lote pelo nome..." oninput="renderLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div></div>
-            <div id="lotesList"></div>
-          </div>
-        </div>
-        <div class="folder glass2" id="folderBaixas">
-          <div class="folder-head" onclick="toggleFolder('folderBaixas')"><div class="folder-title">📕 Baixas <span class="folder-count" id="cntBaixas">0</span></div><svg class="folder-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
-          <div class="folder-body">
-            <div class="folder-tools"><div class="search-bar"><input type="text" id="searchBaixas" placeholder="Buscar por nº ou nome..." oninput="renderBaixas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterBaixas')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
-            <div id="filterBaixas" class="hidden" style="margin-bottom:12px"><select class="form-input" id="fBaixaTipo" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Todos os motivos</option><option value="venda">Venda</option><option value="morte">Morte</option></select></div>
-            <div id="baixasList"></div>
-          </div>
-        </div>
+      </div>
+      <div id="animaisView" class="hidden">
+        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
+        <div class="section-header"><h2>Todos os Animais</h2><div style="display:flex;gap:8px"><button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchAnimais" placeholder="Buscar por nº ou nome..." oninput="renderAnimaisFolder()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterAnimais')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
+        <div id="filterAnimais" class="hidden" style="margin-bottom:12px"><div class="flex-row" style="gap:6px"><select class="form-input" id="fAnSexo" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select><select class="form-input" id="fAnCat" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select><select class="form-input" id="fAnSit" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select></div></div>
+        <div id="animaisList"></div>
+      </div>
+      <div id="lotesView" class="hidden">
+        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
+        <div class="section-header"><h2>Lotes</h2><div style="display:flex;gap:8px"><button class="add-btn" onclick="openModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></button><button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+        <div class="search-bar"><input type="text" id="searchLotesFolder" placeholder="Buscar lote pelo nome..." oninput="renderLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <div id="lotesList"></div>
+      </div>
+      <div id="baixasView" class="hidden">
+        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
+        <div class="section-header"><h2>Baixas</h2></div>
+        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchBaixas" placeholder="Buscar por nº ou nome..." oninput="renderBaixas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterBaixas')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
+        <div id="filterBaixas" class="hidden" style="margin-bottom:12px"><select class="form-input" id="fBaixaTipo" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Todos os motivos</option><option value="venda">Venda</option><option value="morte">Morte</option></select></div>
+        <div id="baixasList"></div>
       </div>
       <div id="loteDetail" class="hidden">
         <button class="back-btn" onclick="backToLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
