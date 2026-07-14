@@ -354,18 +354,19 @@ const HELP={
     '📊 <b>Gráfico do rebanho</b>: toque nos filtros (Categoria, Sexo, Situação, Raça, Lote, Medicado, Inseminado, Origem) para ver a divisão do rebanho.'
   ]},
   pageRebanho:{t:'Rebanho',items:[
-    '📁 <b>Novo lote</b>: botão da pasta, no topo à direita.',
-    '➕ <b>Adicionar animal</b>: botão de +.',
-    'Toque em <b>Abrir →</b> num lote para ver os animais dele.',
-    'Dentro do lote dá para <b>buscar</b> por nº/nome e <b>filtrar</b> por sexo, categoria e situação.',
-    'Em cada animal: 📈 (azul) abre o histórico de leite e peso, ✏️ (verde) edita e 🗑️ exclui.',
-    'Toque no animal para abrir a <b>Ficha 360°</b>: dados, família (mãe/pai/filhos), reprodução, medicações, alimentação, gráficos e linha do tempo.'
+    'A tela tem 3 atalhos: <b>🐄 Todos os Animais</b>, <b>📁 Lotes</b> e <b>📦 Baixas</b> (o número em cada um mostra a quantidade).',
+    '<b>Todos os Animais</b>: lista completa (todos os lotes) com busca e filtro (sexo/categoria/situação). Toque no animal para abrir a <b>Ficha 360°</b>. Botões: 🔵 dar baixa, ✏️ editar, 🗑️ excluir.',
+    '<b>Lotes</b>: crie lote (📁) e adicione animal (➕). Toque no lote para ver os animais. Reordene os lotes com as setinhas ↑ ↓ (lote novo nasce no topo).',
+    '<b>Baixas</b>: animais vendidos ou mortos. Filtre por motivo, sexo e categoria. Use ↩️ para <b>restaurar</b> (recuperar) e 🗑️ para excluir.',
+    '⬇️ <b>Dar baixa</b> (botão azul no animal): escolha <b>Venda</b> (data, valor, obs) ou <b>Morte</b> (data, obs) — o animal sai do lote e vai para Baixas.',
+    '📷 No cadastro do animal dá para adicionar uma <b>foto</b> (abre a câmera no celular).',
+    '<b>Ficha 360°</b>: dados, família (mãe/pai/filhos), reprodução, medicações, alimentação com custo, gráficos de leite/peso e linha do tempo.'
   ]},
   pageInseminacao:{t:'Inseminação',items:[
     '➕ <b>Nova planilha</b> de inseminação (ex.: por mês ou por touro).',
-    'Abra a planilha e adicione inseminações: animal, data, tempo, touro, muco e observações.',
-    'Pode adicionar vários animais de uma vez.',
-    'Editar ✏️ ou excluir 🗑️ cada registro.',
+    '➕ <b>Adicionar inseminação</b>: animal, data, tempo, touro, muco e observações (pode vários animais de uma vez).',
+    '☰ <b>Lista de Touros</b> (3º botão): cadastre nome, raça, grau de sangue e nº de registro. Esses touros aparecem no campo Touro e no "Pai" do animal.',
+    'Toque na planilha para abrir; editar ✏️ ou excluir 🗑️ cada registro.',
     'As inseminações alimentam o <b>calendário reprodutivo</b> (parto previsto e diagnóstico) na tela Início.'
   ]},
   pageMedicacao:{t:'Medicação',items:[
@@ -381,9 +382,9 @@ const HELP={
     'Editar ✏️ ou excluir 🗑️ os registros.'
   ]},
   pageRelatorios:{t:'Relatórios',items:[
-    'Selecione as <b>fontes</b> (lotes, inseminação, medicação, alimentação).',
+    'Selecione as <b>fontes</b> (lotes, inseminação, medicação, alimentação) — ou use <b>Selecionar todos</b> para marcar tudo de uma vez.',
     'Aplique <b>filtros</b> (categoria, sexo, situação, inseminadas) e escolha os <b>campos</b> do relatório.',
-    'Baixe em <b>PDF</b> (azul) ou <b>Excel</b> (verde).'
+    'Baixe em <b>PDF</b> (azul) ou <b>Excel</b> (verde). Os lotes saem em ordem alfabética e os animais em ordem crescente de número.'
   ]},
   pageConfig:{t:'Configurações',items:[
     'Edite seu <b>nome</b> e a <b>foto</b> de perfil.',
@@ -398,7 +399,7 @@ function openHelp(){const pg=document.querySelector('.page.active');const id=pg?
 
 // ========== PWA / AUTO-UPDATE ==========
 // Versão do app (sincronize com sw.js e version.json ao publicar)
-const APP_VERSION = '3.22.0';
+const APP_VERSION = '3.23.0';
 
 // Mostra um banner "Atualização disponível" quando o service worker detecta uma nova versão.
 function showUpdateBanner(worker){
