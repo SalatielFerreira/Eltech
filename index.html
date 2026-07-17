@@ -311,6 +311,10 @@
 <div class="form-group" id="baixaValorGroup"><label>Valor da venda (R$)</label><input class="form-input" id="baixaValor" type="number" step="0.01" inputmode="decimal" placeholder="0,00"></div>
 <div class="form-group"><label>Observações</label><textarea class="form-input" id="baixaObs" placeholder="Opcional"></textarea></div>
 <button class="btn btn-danger mt-8" onclick="confirmBaixa()">Confirmar baixa</button></div></div>
+<div class="modal-overlay" id="parecerModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Parecer da inseminação</h3><button class="modal-close" onclick="closeModal('parecerModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<div id="parecerAnimalName" style="font-weight:700;color:var(--text);margin-bottom:6px"></div>
+<div class="card-sub" style="margin-bottom:14px">Selecione a situação do animal após o diagnóstico. Ela será atualizada no rebanho.</div>
+<div class="form-group"><label>Situação</label><div id="parecerOptions" class="flex-row" style="flex-wrap:wrap;gap:8px"></div></div></div></div>
 <div class="modal-overlay" id="tourosModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Touros</h3><button class="modal-close" onclick="closeModal('tourosModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Nome do touro</label><input class="form-input" id="touroNome" placeholder="Nome"></div>
 <div class="flex-row"><div class="form-group"><label>Raça</label><input class="form-input" id="touroRaca" placeholder="Ex.: Girolando"></div><div class="form-group"><label>Grau de Sangue</label><input class="form-input" id="touroGS" placeholder="Ex.: 5/8, PO"></div></div>
