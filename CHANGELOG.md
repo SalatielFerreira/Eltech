@@ -2,6 +2,15 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.1.1] — 2026-08-13
+
+### Limite de 2MB por foto
+
+- Fotos de animais e de perfil agora têm um teto garantido de **2MB** por arquivo. Se a
+  compressão padrão já resultar em um arquivo menor (o caso comum), nada muda; se ainda
+  assim ficar maior que 2MB, o app reduz a qualidade automaticamente (e, em último caso,
+  também a resolução) até caber no limite, antes de enviar para o Supabase Storage.
+
 ## [4.1.0] — 2026-08-13
 
 ### Remove o quadro de Backup dos Dados

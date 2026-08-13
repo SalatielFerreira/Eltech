@@ -11,11 +11,41 @@ import { toast } from './ui.js';
 import { dbUpdate } from './data.js';
 
 const SIGNED_URL_TTL = 3600; // segundos
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // teto de 2MB por foto (animal ou avatar)
 
 function uid() { return state.session.user.id; }
 
-// Redimensiona/comprime a imagem escolhida e devolve um Blob JPEG.
-export function compressImageToBlob(file, maxSize, quality) {
+function canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao comprimir imagem')), 'image/jpeg', quality);
+  });
+}
+
+// Reduz qualidade (e, em último caso, resolução) até o Blob caber no teto de tamanho.
+// Se a foto já sair pequena na primeira tentativa (caso comum), não mexe em nada.
+async function fitUnderMaxBytes(canvas, quality, maxBytes) {
+  let q = quality;
+  let blob = await canvasToBlob(canvas, q);
+  while (blob.size > maxBytes && q > 0.1) {
+    q = Math.max(0.1, q - 0.1);
+    blob = await canvasToBlob(canvas, q);
+  }
+  let c = canvas;
+  while (blob.size > maxBytes && c.width > 200) {
+    const nc = document.createElement('canvas');
+    nc.width = Math.round(c.width * 0.8);
+    nc.height = Math.round(c.height * 0.8);
+    nc.getContext('2d').drawImage(c, 0, 0, nc.width, nc.height);
+    c = nc;
+    blob = await canvasToBlob(c, q);
+  }
+  return blob;
+}
+
+// Redimensiona/comprime a imagem escolhida e devolve um Blob JPEG que nunca
+// ultrapassa maxBytes (padrão 2MB) — se a compressão inicial já ficar abaixo
+// do teto, o resultado sai igual; só recomprime se realmente precisar.
+export function compressImageToBlob(file, maxSize, quality, maxBytes = MAX_PHOTO_BYTES) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -27,7 +57,7 @@ export function compressImageToBlob(file, maxSize, quality) {
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
         c.getContext('2d').drawImage(img, 0, 0, w, h);
-        c.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao comprimir imagem')), 'image/jpeg', quality);
+        fitUnderMaxBytes(c, quality, maxBytes).then(resolve).catch(reject);
       };
       img.onerror = reject;
       img.src = e.target.result;

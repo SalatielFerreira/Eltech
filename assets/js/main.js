@@ -22,7 +22,7 @@ import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
 
-const APP_VERSION = '4.1.0'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = '4.1.1'; // sincronize com sw.js (VERSION) e version.json
 
 Object.assign(window, {
   // ui.js
