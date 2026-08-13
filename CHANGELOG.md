@@ -2,6 +2,34 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.0.0] — 2026-08-13
+
+### Migração para Supabase + Vercel
+
+- **Dados na nuvem:** o app deixou de guardar tudo em `localStorage`/IndexedDB do aparelho
+  e passou a usar **Supabase** (Postgres + Auth + Storage). Os mesmos dados agora aparecem
+  em qualquer aparelho ao entrar com o mesmo e-mail e senha.
+- **Login por e-mail:** a autenticação caseira (senha em hash local, múltiplas contas no
+  mesmo navegador) foi substituída pelo Supabase Auth. O login passou a ser só por e-mail
+  (antes aceitava e-mail ou nome) e a sessão fica conectada automaticamente — o campo
+  "Manter conectado" não existe mais por ser redundante.
+- **Fotos na nuvem:** fotos de animais e de perfil, antes guardadas em IndexedDB local,
+  agora ficam em buckets privados do Supabase Storage — não é mais preciso exportar/importar
+  fotos manualmente ao trocar de aparelho.
+- **Importar dados antigos:** novo fluxo em Configurações — **Importar backup antigo** (e
+  **Importar fotos antigas**) traz os dados de uma exportação feita pela versão anterior do
+  app para dentro da conta atual na nuvem.
+- **Reestruturação do código:** o antigo `assets/js/app.js` (arquivo único) foi dividido em
+  ~20 módulos ES por assunto (`assets/js/modules/`), sem alterar nenhuma tela do `index.html`.
+  Código morto foi removido (autenticação caseira, IndexedDB de fotos, lembrete de backup por
+  contagem de alterações, funções sem nenhuma chamada no app).
+- **Publicação via Vercel:** o app estático passa a ser publicado pela Vercel a partir do
+  GitHub (`vercel.json` + `scripts/generate-config.js`), além de continuar compatível com
+  GitHub Pages. Veja o `README.md` para o passo a passo completo.
+- **Sem modo offline nesta versão:** como os dados vivem no Supabase, o app agora exige
+  internet para ler/gravar (o app-shell continua instalável e abre offline, mas mostra um
+  aviso e bloqueia edição sem conexão).
+
 ## [3.9.0] — 2026-07-13
 
 ### Enviar backup (compartilhar)

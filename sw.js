@@ -1,28 +1,56 @@
 /* ============================================================
    ELTECH - Service Worker
-   Estratégia: Network-first para arquivos do próprio site
-   (sempre traz a versão mais nova quando há internet) e
-   cache como fallback quando estiver offline.
+   Estratégia: Network-first para os arquivos do próprio app-shell
+   (HTML/CSS/JS) — sempre busca a versão mais nova quando há
+   internet, com cache como fallback offline. O app em si (dados)
+   agora depende do Supabase: chamadas para *.supabase.co NUNCA
+   passam pelo cache, são sempre rede direta (dado sempre fresco;
+   sem internet, o app avisa e bloqueia edição — não há modo
+   offline de dados nesta versão).
    ------------------------------------------------------------
    AO PUBLICAR UMA NOVA VERSÃO: basta incrementar VERSION abaixo.
    Isso troca o nome do cache, força a atualização e dispara o
    aviso "Nova versão disponível" para quem já tem o app aberto.
-   (Mantenha igual em app.js -> APP_VERSION e em version.json)
+   (Mantenha igual em main.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '3.24.0';
+const VERSION = '4.0.0';
 const CACHE = 'eltech-v' + VERSION;
 
-// Caminhos RELATIVOS (./) para funcionar no GitHub Pages em qualquer subpasta.
+// Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.
+// Note: config.js NÃO entra aqui (é gerado no deploy / preenchido localmente, cada
+// ambiente tem o seu; não faz sentido supor que existe um igual para todo mundo).
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './assets/css/styles.css',
-  './assets/js/app.js',
+  './assets/js/main.js',
+  './assets/js/state.js',
+  './assets/js/supabaseClient.js',
+  './assets/js/modules/ui.js',
+  './assets/js/modules/charts.js',
+  './assets/js/modules/constants.js',
+  './assets/js/modules/data.js',
+  './assets/js/modules/animalRow.js',
+  './assets/js/modules/auth.js',
+  './assets/js/modules/profile.js',
+  './assets/js/modules/fotos.js',
+  './assets/js/modules/lotes.js',
+  './assets/js/modules/animais.js',
+  './assets/js/modules/rebanho.js',
+  './assets/js/modules/baixas.js',
+  './assets/js/modules/touros.js',
+  './assets/js/modules/inseminacao.js',
+  './assets/js/modules/medicacao.js',
+  './assets/js/modules/alimentacao.js',
+  './assets/js/modules/dashboard.js',
+  './assets/js/modules/relatorios.js',
+  './assets/js/modules/help.js',
+  './assets/js/modules/backup.js',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
   './assets/img/fundo.png',
-  'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap',
 ];
 
 // Instala: pré-carrega os arquivos essenciais no cache da nova versão.
@@ -51,6 +79,10 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // Supabase (banco, auth, storage): sempre rede, nunca cache — dados têm que
+  // vir sempre atualizados, e a esta altura só o app-shell é feito para offline.
+  if (url.hostname.endsWith('.supabase.co')) return;
 
   if (url.origin === location.origin) {
     // Arquivos do próprio app: sempre tenta a rede primeiro.

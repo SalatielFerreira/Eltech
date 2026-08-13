@@ -34,9 +34,8 @@
       <button class="login-tab" onclick="switchLoginTab('register')">Cadastrar</button>
     </div>
     <div id="loginForm" class="login-form active">
-      <div class="form-group"><label>Email ou Nome</label><input class="form-input" id="loginEmail" type="text" placeholder="seu@email.com ou seu nome"></div>
+      <div class="form-group"><label>Email</label><input class="form-input" id="loginEmail" type="email" placeholder="seu@email.com"></div>
       <div class="form-group"><label>Senha</label><div class="pass-wrap"><input class="form-input" id="loginPass" type="password" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('loginPass',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text2);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="loginKeep" checked style="accent-color:var(--g500);width:16px;height:16px">Manter conectado</label>
       <button class="btn btn-primary mt-8" onclick="doLogin()">Entrar</button>
     </div>
     <div id="registerForm" class="login-form">
@@ -232,14 +231,13 @@
 
       <div class="config-section glass2">
         <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup dos Dados</h4>
-        <p style="font-size:.75rem;color:var(--text2);margin-bottom:12px">Exporte seus dados para um arquivo e restaure quando precisar. Ideal para trocar de celular ou manter uma cópia segura.</p>
+        <p style="font-size:.75rem;color:var(--text2);margin-bottom:12px">Seus dados e fotos já ficam salvos na nuvem automaticamente. Use "Exportar backup" para guardar uma cópia extra, ou "Importar backup antigo" para trazer dados de uma versão anterior do ELTECH (a que guardava tudo só no aparelho).</p>
         <div class="backup-section">
           <button class="btn btn-primary btn-sm" style="background:var(--info);color:#fff" onclick="shareBackup()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Exportar backup</button>
-          <button class="btn btn-primary btn-sm" style="background:var(--green);color:#fff" onclick="document.getElementById('importFile').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="8 11 12 15 16 11"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Importar backup</button>
-          <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importBackup(event)">
-          <button class="btn btn-primary btn-sm" style="background:var(--info);color:#fff" onclick="sharePhotos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Exportar fotos</button>
-          <button class="btn btn-primary btn-sm" style="background:var(--green);color:#fff" onclick="document.getElementById('importPhotoFile').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Importar fotos</button>
-          <input type="file" id="importPhotoFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importPhotos(event)">
+          <button class="btn btn-primary btn-sm" style="background:var(--green);color:#fff" onclick="document.getElementById('importFile').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="8 11 12 15 16 11"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Importar backup antigo</button>
+          <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importBackupFile(event)">
+          <button class="btn btn-primary btn-sm" style="background:var(--green);color:#fff" onclick="document.getElementById('importPhotoFile').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Importar fotos antigas</button>
+          <input type="file" id="importPhotoFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importLegacyPhotos(event)">
         </div>
       </div>
 
@@ -323,7 +321,6 @@
 <div id="tourosList"></div>
 </div></div>
 <div class="modal-overlay" id="fichaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
-<div class="modal-overlay" id="histModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="histModalTitle">Histórico</h3><button class="modal-close" onclick="closeModal('histModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="histContent"></div></div></div>
 <div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Modo de Seleção</label>
 <div style="display:flex;gap:6px;margin-bottom:12px">
@@ -391,6 +388,6 @@
 </div>
 
 
-<script src="assets/js/app.js"></script>
+<script type="module" src="assets/js/main.js"></script>
 </body>
 </html>

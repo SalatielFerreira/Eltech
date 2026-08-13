@@ -275,11 +275,6 @@ canvas#pieChart{max-width:240px;max-height:240px;margin:0 auto;display:block}
   .backup-section .btn svg{display:none}
 }
 
-/* Arrastar lotes para reordenar */
-.lote-drag-handle{color:var(--text3);cursor:grab;touch-action:none;padding:6px 2px;flex-shrink:0;display:flex;align-items:center}
-.lote-drag-handle:active{cursor:grabbing;color:var(--g400)}
-.card.dragging{opacity:.85;box-shadow:0 12px 30px rgba(0,0,0,.5);position:relative;z-index:50}
-
 /* Setas de reordenar lote */
 .lote-move{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
 .lote-move button{background:rgba(204,177,133,0.14);border:none;color:var(--g400);width:32px;height:22px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
