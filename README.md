@@ -49,8 +49,7 @@ ELTECH/
             ├── medicacao.js / alimentacao.js
             ├── dashboard.js         (Início: gráfico, alertas, painel do sítio)
             ├── relatorios.js        (exportação em CSV/HTML)
-            ├── help.js              (botão "?" de ajuda por página)
-            └── backup.js            (exportar backup + importar backup de versão antiga)
+            └── help.js              (botão "?" de ajuda por página)
 ```
 
 ---
@@ -83,8 +82,7 @@ npx serve .
 ```
 
 Depois acesse a URL indicada pelo servidor, crie uma conta pela aba **Cadastrar** e teste as
-telas normalmente. Se você já tinha dados na versão anterior do ELTECH (guardados no
-navegador), veja a seção **Trazer dados da versão anterior** abaixo.
+telas normalmente.
 
 ---
 
@@ -133,23 +131,6 @@ Ou menu **⋮ → Instalar aplicativo / Adicionar à tela inicial**.
 
 **Computador (Chrome/Edge):** clique no ícone de instalação (⊕) na barra de endereço,
 ou menu **⋮ → Instalar ELTECH**.
-
----
-
-## 💾 Backup e dados de versões anteriores
-
-Dentro do app, em **Configurações**:
-- **Exportar backup** → salva um arquivo `.json` com uma cópia de segurança dos seus dados.
-- **Importar backup antigo** → traz os dados de uma exportação feita pela **versão anterior**
-  do ELTECH (a que guardava tudo só no navegador do aparelho) para dentro da sua conta atual
-  na nuvem. Os dados são **adicionados**, não substituem o que já existe.
-- **Importar fotos antigas** → depois de importar o backup antigo (na mesma sessão), importe
-  também o arquivo de fotos exportado da versão anterior, se tiver um.
-
-> Se você é o usuário original do ELTECH (dados salvos no navegador antes desta migração):
-> abra a versão antiga do app, use **Configurações → Exportar backup** (e, se tiver fotos
-> de animais cadastradas, **Exportar fotos** também) antes de trocar para esta versão —
-> assim você pode trazer tudo para a nuvem através do fluxo acima.
 
 ---
 

@@ -217,10 +217,6 @@ canvas#pieChart{max-width:240px;max-height:240px;margin:0 auto;display:block}
 .report-dl{display:flex;gap:10px;margin-top:12px}
 .report-dl .btn{display:flex;align-items:center;justify-content:center;gap:8px}
 
-/* BACKUP */
-.backup-section{display:flex;gap:10px;margin-top:12px}
-.backup-section .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:.8rem}
-
 /* TOAST */
 .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);padding:12px 24px;border-radius:var(--rs);font-size:.82rem;font-weight:600;z-index:200;opacity:0;transition:all .35s ease;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -267,13 +263,6 @@ canvas#pieChart{max-width:240px;max-height:240px;margin:0 auto;display:block}
 .flex-row{display:flex;gap:10px}.flex-row>*{flex:1}
 .hidden{display:none!important}
 .divider{height:1px;background:var(--gb);margin:18px 0}
-
-/* Botões de backup/fotos mais limpos no celular: 2 por linha, sem ícone, texto centralizado */
-@media (max-width:600px){
-  .backup-section{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .backup-section .btn{flex:none;width:100%;font-size:.84rem;padding:12px 10px}
-  .backup-section .btn svg{display:none}
-}
 
 /* Setas de reordenar lote */
 .lote-move{display:flex;flex-direction:column;gap:3px;flex-shrink:0}

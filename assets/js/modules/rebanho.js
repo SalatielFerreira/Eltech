@@ -7,7 +7,7 @@ import { renderLotes } from './lotes.js';
 import { renderAnimaisFolder } from './animais.js';
 import { renderBaixas } from './baixas.js';
 
-const VIEWS = ['animaisView', 'lotesView', 'loteDetail', 'baixasView'];
+const VIEWS = ['rebanhoHome', 'animaisView', 'lotesView', 'loteDetail', 'baixasView'];
 
 export function renderRebanho() {
   renderLotes();

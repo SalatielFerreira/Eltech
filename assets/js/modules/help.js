@@ -46,8 +46,6 @@ const HELP = {
     'Edite seu <b>nome</b> e a <b>foto</b> de perfil.',
     'Troque a sua <b>senha</b>.',
     '☁️ Seus dados e as fotos dos animais ficam salvos na nuvem (Supabase) — abrindo em outro aparelho, é só entrar com o mesmo e-mail e senha.',
-    '💾 <b>Exportar backup</b>: salva uma cópia de segurança dos seus dados em um arquivo .json.',
-    '📦 <b>Importar backup antigo</b>: traz os dados de uma versão anterior do ELTECH (a que guardava tudo só no aparelho) para a sua conta na nuvem.',
     'Sair da conta (botão vermelho).',
   ] },
 };

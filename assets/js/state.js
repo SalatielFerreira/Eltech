@@ -32,10 +32,6 @@ export const state = {
 
   // URLs assinadas de fotos já resolvidas nesta sessão (evita repetir chamadas ao Storage)
   photoUrlCache: new Map(),
-
-  // Mapa {idAntigo -> idNovo} da última importação de backup antigo, usado
-  // para casar o arquivo de fotos exportado do app antigo com os animais novos.
-  lastImportAnimalMap: null,
 };
 
 export function resetTempSelections() {

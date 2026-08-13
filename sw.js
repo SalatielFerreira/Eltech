@@ -13,7 +13,7 @@
    aviso "Nova versão disponível" para quem já tem o app aberto.
    (Mantenha igual em main.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '4.0.0';
+const VERSION = '4.1.0';
 const CACHE = 'eltech-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.
@@ -46,7 +46,6 @@ const ASSETS = [
   './assets/js/modules/dashboard.js',
   './assets/js/modules/relatorios.js',
   './assets/js/modules/help.js',
-  './assets/js/modules/backup.js',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
   './assets/img/fundo.png',

@@ -2,6 +2,16 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.1.0] — 2026-08-13
+
+### Remove o quadro de Backup dos Dados
+
+- Removido o quadro **Backup dos Dados** da tela de Configurações (exportar backup,
+  importar backup antigo e importar fotos antigas) — com os dados já vivendo na nuvem via
+  Supabase, deixou de fazer sentido como recurso permanente do app.
+- Removido o módulo `assets/js/modules/backup.js` (sem uso após a remoção da tela) e o
+  código morto associado (CSS `.backup-section`, campo `lastImportAnimalMap` do estado).
+
 ## [4.0.0] — 2026-08-13
 
 ### Migração para Supabase + Vercel

@@ -21,9 +21,8 @@ import * as alimentacao from './modules/alimentacao.js';
 import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
-import * as backup from './modules/backup.js';
 
-const APP_VERSION = '4.0.0'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = '4.1.0'; // sincronize com sw.js (VERSION) e version.json
 
 Object.assign(window, {
   // ui.js
@@ -79,8 +78,6 @@ Object.assign(window, {
   toggleAllReportSources: relatorios.toggleAllReportSources, downloadReport: relatorios.downloadReport,
   // help.js
   openHelp: help.openHelp,
-  // backup.js
-  shareBackup: backup.shareBackup, importBackupFile: backup.importBackupFile, importLegacyPhotos: backup.importLegacyPhotos,
 });
 
 // ---------- Enter para logar/cadastrar ----------
