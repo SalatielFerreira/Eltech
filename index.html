@@ -64,23 +64,28 @@
 
     <!-- HOME -->
     <div class="page active" id="pageHome">
-      <div class="stat-grid" id="statGrid"></div>
-      <div id="homeAlerts"></div>
+      <div class="hero" id="homeHero"></div>
+      <div class="quick-actions">
+        <button class="qa" onclick="quickAction('animal')"><span class="qa-ico qa-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span class="qa-lbl">Animal</span></button>
+        <button class="qa" onclick="quickAction('insem')"><span class="qa-ico qa-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v6.5L4.5 19a1.5 1.5 0 001.3 2.2h12.4a1.5 1.5 0 001.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg></span><span class="qa-lbl">Inseminação</span></button>
+        <button class="qa" onclick="quickAction('med')"><span class="qa-ico qa-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5l10-10a4.95 4.95 0 10-7-7l-10 10a4.95 4.95 0 107 7z"/><path d="M8.5 8.5l7 7"/></svg></span><span class="qa-lbl">Medicação</span></button>
+        <button class="qa" onclick="quickAction('ali')"><span class="qa-ico qa-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="M12 12C12 7 9 4 5 3c0 5 2.5 8 7 9z"/><path d="M12 15c0-4 2.5-6.5 7-7.5-.5 4.5-3 7-7 7.5z"/></svg></span><span class="qa-lbl">Alimentação</span></button>
+      </div>
       <div id="farmPanel"></div>
-      <div class="chart-container glass">
-        <h3>Visão do Rebanho</h3>
-        <div class="chart-filters" id="chartFilters">
-          <button class="filter-chip active" data-filter="categoria" onclick="setChartFilter('categoria',this)">Categoria</button>
-          <button class="filter-chip" data-filter="sexo" onclick="setChartFilter('sexo',this)">Sexo</button>
-          <button class="filter-chip" data-filter="situacao" onclick="setChartFilter('situacao',this)">Situação</button>
-          <button class="filter-chip" data-filter="raca" onclick="setChartFilter('raca',this)">Raça</button>
-          <button class="filter-chip" data-filter="lote" onclick="setChartFilter('lote',this)">Lote</button>
-          <button class="filter-chip" data-filter="medicado" onclick="setChartFilter('medicado',this)">Medicado</button>
-          <button class="filter-chip" data-filter="inseminado" onclick="setChartFilter('inseminado',this)">Inseminado</button>
-          <button class="filter-chip" data-filter="origem" onclick="setChartFilter('origem',this)">Origem</button>
+      <div id="homeAlerts"></div>
+      <div class="chart-card">
+        <div class="card-head"><h3>Visão do rebanho</h3><span class="card-head-sub" id="chartSub"></span></div>
+        <div class="chip-scroll" id="chartFilters">
+          <button class="chip active" data-filter="categoria" onclick="setChartFilter('categoria',this)">Categoria</button>
+          <button class="chip" data-filter="situacao" onclick="setChartFilter('situacao',this)">Situação</button>
+          <button class="chip" data-filter="lote" onclick="setChartFilter('lote',this)">Lote</button>
+          <button class="chip" data-filter="raca" onclick="setChartFilter('raca',this)">Raça</button>
+          <button class="chip" data-filter="sexo" onclick="setChartFilter('sexo',this)">Sexo</button>
+          <button class="chip" data-filter="medicado" onclick="setChartFilter('medicado',this)">Medicado</button>
+          <button class="chip" data-filter="inseminado" onclick="setChartFilter('inseminado',this)">Inseminado</button>
+          <button class="chip" data-filter="origem" onclick="setChartFilter('origem',this)">Origem</button>
         </div>
-        <canvas id="pieChart" width="260" height="260"></canvas>
-        <div class="chart-legend" id="chartLegend"></div>
+        <div class="chart-body"><canvas id="pieChart" width="220" height="220" aria-label="Gráfico do rebanho"></canvas><div class="chart-legend" id="chartLegend"></div></div>
       </div>
     </div>
 
@@ -196,108 +201,152 @@
     <!-- INSEMINAÇÃO -->
     <div class="page" id="pageInseminacao">
       <div id="insemList">
-        <div class="section-header"><h2>Inseminação</h2>
-          <div style="display:flex;gap:8px">
-            <button class="add-btn" onclick="openModal('planilhaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></button>
-            <button class="add-btn" onclick="openInsemAnimalDirect()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
-            <button class="add-btn" onclick="openTouros()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+        <div class="page-head">
+          <div><h2>Inseminação</h2><p class="page-sub" id="insemSub"></p></div>
+          <div class="head-actions">
+            <button class="icon-btn" onclick="openTouros()" aria-label="Touros e sêmen" title="Touros e sêmen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4c0 3 2 5 4 5M20 4c0 3-2 5-4 5"/><path d="M8 9h8l1 5-2 6H9l-2-6z"/><circle cx="10" cy="14" r=".6" fill="currentColor"/><circle cx="14" cy="14" r=".6" fill="currentColor"/></svg></button>
+            <button class="icon-btn" onclick="openModal('planilhaModal')" aria-label="Nova planilha" title="Nova planilha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M12 11v6M9 14h6"/></svg></button>
+            <button class="add-btn" onclick="openInsemAnimalDirect()" aria-label="Nova inseminação" title="Nova inseminação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
           </div>
         </div>
+        <div class="herd-kpis kpis-4" id="insemKpis"></div>
+        <div class="section-label">Planilhas</div>
         <div id="insemPlanilhas"></div>
       </div>
       <div id="insemDetail" class="hidden">
-        <button class="back-btn" onclick="backToList()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
-        <div class="section-header"><h2 id="insemDetailTitle"></h2><button class="add-btn" onclick="openInsemAnimalForPlan()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div>
-        <div class="search-bar"><input type="text" id="searchInseminacao" placeholder="Buscar por nº ou nome..." oninput="renderAnimals('inseminacao')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-        <div id="insemAnimals"></div>
+        <div class="view-head">
+          <button class="back-icon" onclick="backToList()" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="view-title"><h2 id="insemDetailTitle"></h2><span class="view-sub" id="insemDetailSub"></span></div>
+          <button class="icon-btn" onclick="openPlanActions()" aria-label="Opções da planilha"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+          <button class="add-btn" onclick="openInsemAnimalForPlan()" aria-label="Adicionar inseminação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+        <div class="seg seg-filter" id="insemFilter">
+          <button type="button" class="active" data-v="all" onclick="setInsemFilter('all')">Todas</button>
+          <button type="button" data-v="aguardando" onclick="setInsemFilter('aguardando')">Aguardando</button>
+          <button type="button" data-v="prenha" onclick="setInsemFilter('prenha')">Prenhas</button>
+          <button type="button" data-v="vazia" onclick="setInsemFilter('vazia')">Vazias</button>
+        </div>
+        <div class="search-bar"><input type="search" id="searchInseminacao" aria-label="Buscar inseminação" placeholder="Buscar por nº, nome ou touro..." oninput="renderAnimals()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <div id="insemAnimals" class="ani-list"></div>
       </div>
     </div>
 
     <!-- MEDICAÇÃO -->
     <div class="page" id="pageMedicacao">
-      <div class="section-header"><h2>Medicação</h2><button class="add-btn" onclick="openModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div>
-      <div class="search-bar"><input type="text" id="searchMedicacao" placeholder="Buscar por nº ou nome..." oninput="renderMedDirect()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-      <div id="medDirectList"></div>
+      <div class="page-head">
+        <div><h2>Medicação</h2><p class="page-sub" id="medSub"></p></div>
+        <button class="add-btn" onclick="openNewMed()" aria-label="Nova medicação" title="Nova medicação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+      <div class="herd-kpis kpis-4" id="medKpis"></div>
+      <div class="seg seg-filter" id="medFilter">
+        <button type="button" class="active" data-v="all" onclick="setMedFilter('all')">Todas</button>
+        <button type="button" data-v="ativas" onclick="setMedFilter('ativas')">Ativas</button>
+        <button type="button" data-v="encerradas" onclick="setMedFilter('encerradas')">Encerradas</button>
+      </div>
+      <div class="search-bar"><input type="search" id="searchMedicacao" aria-label="Buscar medicação" placeholder="Buscar por animal ou medicamento..." oninput="renderMedDirect()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+      <div id="medDirectList" class="ani-list"></div>
     </div>
 
     <!-- ALIMENTAÇÃO -->
     <div class="page" id="pageAlimentacao">
-      <div class="section-header"><h2>Alimentação</h2><button class="add-btn" onclick="openModal('aliAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div>
-      <div class="cost-grid" id="aliCostGrid"></div>
-      <div id="aliDirectList"></div>
+      <div class="page-head">
+        <div><h2>Alimentação</h2><p class="page-sub" id="aliSub"></p></div>
+        <button class="add-btn" onclick="openNewAli()" aria-label="Nova alimentação" title="Nova alimentação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+      <div class="herd-kpis kpis-4" id="aliKpis"></div>
+      <div id="aliBreakdown"></div>
+      <div class="section-label" id="aliListLabel">Registros</div>
+      <div id="aliDirectList" class="ani-list"></div>
     </div>
 
     <!-- RELATÓRIOS -->
     <div class="page" id="pageRelatorios">
-      <div class="section-header"><h2>Relatórios</h2></div>
-      <div class="glass2" style="border-radius:var(--rs);padding:20px;margin-bottom:16px">
-        <div class="form-group"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><label style="margin-bottom:0">Fonte dos Dados</label><button type="button" id="btnSelAllSources" onclick="toggleAllReportSources()" style="background:var(--info);color:#fff;border:none;border-radius:var(--rx);padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer">Selecionar todos</button></div>
-          <div id="reportSourceChecks" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:8px;background:rgba(0,0,0,0.2);border-radius:var(--rx);border:1px solid rgba(255,255,255,0.1)"></div>
+      <div class="page-head"><div><h2>Relatórios</h2><p class="page-sub">Monte o relatório em 4 passos e baixe</p></div></div>
+      <div class="step-card">
+        <div class="step-head"><span class="step-n">1</span><div class="step-txt"><h4>O que incluir</h4><p>Escolha as fontes dos dados</p></div><button type="button" class="link-btn" id="btnSelAllSources" onclick="toggleAllReportSources()">Selecionar todos</button></div>
+        <div id="reportSourceChecks"></div>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><span class="step-n">2</span><div class="step-txt"><h4>Filtros do rebanho</h4><p>Valem para as fontes de rebanho (lotes)</p></div></div>
+        <div class="filter-grid">
+          <label class="fp-field"><span>Sexo</span><select class="form-input" id="reportFilterSex" onchange="updateReportSummary()"><option value="">Todos</option><option>Fêmea</option><option>Macho</option></select></label>
+          <label class="fp-field"><span>Categoria</span><select class="form-input" id="reportFilterCat" onchange="updateReportSummary()"><option value="">Todas</option><option>Bezerra</option><option>Novilha</option><option>Vaca em lactação</option><option>Vaca seca</option><option>Bezerro</option><option>Garrote</option><option>Boi</option><option>Touro</option></select></label>
+          <label class="fp-field"><span>Situação</span><select class="form-input" id="reportFilterSit" onchange="updateReportSummary()"><option value="">Todas</option><option>Prenha</option><option>Vazia</option><option>Vazia Cloe</option><option>Vazia Clod</option><option>Cio</option><option>Anestro</option><option>Não se aplica</option></select></label>
+          <label class="fp-field"><span>Inseminadas</span><select class="form-input" id="reportFilterInsem" onchange="updateReportSummary()"><option value="">Todas</option><option value="sim">Sim</option><option value="nao">Não</option></select></label>
         </div>
-        <div class="flex-row">
-          <div class="form-group"><label>Sexo</label><select class="form-input" id="reportFilterSex"><option value="">Todos</option><option>Macho</option><option>Fêmea</option></select></div>
-          <div class="form-group"><label>Categoria</label><select class="form-input" id="reportFilterCat"><option value="">Todas</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select></div>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><span class="step-n">3</span><div class="step-txt"><h4>Colunas do rebanho</h4><p>O que aparece em cada animal</p></div></div>
+        <div class="chip-grid" id="reportFieldChecks">
+          <label class="diet-check"><input type="checkbox" checked value="num"><span>Nº</span></label>
+          <label class="diet-check"><input type="checkbox" checked value="nome"><span>Nome</span></label>
+          <label class="diet-check"><input type="checkbox" checked value="sexo"><span>Sexo</span></label>
+          <label class="diet-check"><input type="checkbox" checked value="cat"><span>Categoria</span></label>
+          <label class="diet-check"><input type="checkbox" checked value="sit"><span>Situação</span></label>
+          <label class="diet-check"><input type="checkbox" checked value="raca"><span>Raça</span></label>
+          <label class="diet-check"><input type="checkbox" value="lote"><span>Lote</span></label>
+          <label class="diet-check"><input type="checkbox" value="idade"><span>Idade</span></label>
+          <label class="diet-check"><input type="checkbox" value="peso"><span>Peso</span></label>
+          <label class="diet-check"><input type="checkbox" value="leite"><span>Leite</span></label>
+          <label class="diet-check"><input type="checkbox" value="ultimoParto"><span>Últ. parto</span></label>
+          <label class="diet-check"><input type="checkbox" value="prenha"><span>Dias prenha</span></label>
+          <label class="diet-check"><input type="checkbox" value="insem"><span>Últ. insem.</span></label>
+          <label class="diet-check"><input type="checkbox" value="origem"><span>Origem</span></label>
+          <label class="diet-check"><input type="checkbox" value="tipoPrenhez"><span>Concepção</span></label>
+          <label class="diet-check"><input type="checkbox" value="pais"><span>Mãe/Pai</span></label>
+          <label class="diet-check"><input type="checkbox" value="pesagem"><span>Pesagens</span></label>
+          <label class="diet-check"><input type="checkbox" value="brinco"><span>Brinco</span></label>
+          <label class="diet-check"><input type="checkbox" value="registro"><span>Registro</span></label>
+          <label class="diet-check"><input type="checkbox" value="pelagem"><span>Pelagem</span></label>
+          <label class="diet-check"><input type="checkbox" value="obs"><span>Obs.</span></label>
         </div>
-        <div class="flex-row">
-          <div class="form-group"><label>Situação</label><select class="form-input" id="reportFilterSit"><option value="">Todas</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select></div>
-          <div class="form-group"><label>Inseminadas</label><select class="form-input" id="reportFilterInsem"><option value="">Todas</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
-        </div>
-        <div class="report-dl">
-          <button class="btn btn-primary" style="background:var(--info);color:#fff" onclick="downloadReport('pdf')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
-          <button class="btn btn-primary" style="background:var(--green);color:#fff" onclick="downloadReport('csv')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Excel</button>
-        </div>
-        <div id="reportFieldsSection" style="margin-top:14px">
-          <label style="font-size:.72rem;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:8px">Campos do Rebanho</label>
-          <div style="display:flex;flex-wrap:wrap;gap:5px" id="reportFieldChecks">
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="num"><span>Nº</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="nome"><span>Nome</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="sexo"><span>Sexo</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="cat"><span>Categoria</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="sit"><span>Situação</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" checked value="raca"><span>Raça</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="idade"><span>Idade</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="origem"><span>Origem</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="tipoPrenhez"><span>Tipo Prenhez</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="pais"><span>Mãe/Pai</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="peso"><span>Peso</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="leite"><span>Leite</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="pesagem"><span>Pesagens</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="ultimoParto"><span>Últ. Parto</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="prenha"><span>Dias Prenha</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="insem"><span>Últ. Insem.</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="lote"><span>Lote</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="brinco"><span>Brinco</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="registro"><span>Registro</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="pelagem"><span>Pelagem</span></label>
-            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="obs"><span>Obs.</span></label>
-          </div>
+      </div>
+      <div class="step-card">
+        <div class="step-head"><span class="step-n">4</span><div class="step-txt"><h4>Baixar</h4><p id="reportSummary">Selecione ao menos uma fonte</p></div></div>
+        <div class="dl-grid">
+          <button class="dl-btn dl-pdf" onclick="downloadReport('pdf')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg><span><b>PDF</b><small>Para imprimir ou enviar</small></span></button>
+          <button class="dl-btn dl-xls" onclick="downloadReport('csv')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg><span><b>Excel</b><small>Planilha para editar</small></span></button>
         </div>
       </div>
     </div>
 
     <!-- CONFIGURAÇÃO -->
     <div class="page" id="pageConfig">
-      <div class="profile-section">
+      <div class="profile-card">
         <div class="avatar-wrap">
           <div class="avatar-circle" id="avatarCircle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" id="avatarPlaceholder"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <img id="avatarImg" src="" style="display:none">
-            <input type="file" accept="image/*" onchange="setAvatar(event)">
+            <img id="avatarImg" src="" alt="Foto de perfil" style="display:none">
+            <input type="file" accept="image/*" onchange="setAvatar(event)" aria-label="Trocar foto de perfil">
           </div>
           <div class="avatar-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
         </div>
-        <input class="profile-name" id="profileName" value="Usuário" placeholder="Seu nome" maxlength="15" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g,'')">
+        <input class="profile-name" id="profileName" value="Usuário" placeholder="Seu nome" maxlength="15" aria-label="Seu nome" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g,'')">
+        <div class="profile-email" id="profileEmail"></div>
+        <div class="profile-hint">Toque na foto ou no nome para alterar</div>
       </div>
 
-      <div class="config-section glass2">
-        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Alterar Senha</h4>
-        <div class="form-group"><label>Senha atual</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgOldPass" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgOldPass',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-        <div class="form-group"><label>Nova senha</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgNewPass" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgNewPass',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-        <button class="btn btn-primary" style="background:#a3844e;color:#fff;box-shadow:0 4px 16px rgba(163,132,78,0.45);display:flex;align-items:center;justify-content:center;gap:8px" onclick="changePassword()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar Nova Senha</button>
+      <div class="settings-label">Conta</div>
+      <div class="settings-group">
+        <details class="settings-item">
+          <summary><span class="si-ico">🔒</span><span class="si-txt"><b>Alterar senha</b><small>Troque a senha de acesso</small></span><svg class="si-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="si-body">
+            <div class="form-group"><label for="cfgOldPass">Senha atual</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgOldPass" placeholder="••••••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgOldPass',this)" aria-label="Mostrar senha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+            <div class="form-group"><label for="cfgNewPass">Nova senha</label><div class="pass-wrap"><input class="form-input" type="password" id="cfgNewPass" placeholder="Aa1@••••"><button type="button" class="pass-toggle" onclick="togglePass('cfgNewPass',this)" aria-label="Mostrar senha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="field-hint">Mínimo 6 caracteres, com maiúscula, número e caractere especial.</div></div>
+            <button class="btn btn-primary" onclick="changePassword()">Salvar nova senha</button>
+          </div>
+        </details>
       </div>
 
-      <button class="btn btn-danger mt-16" style="margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="doLogout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair da Conta</button>
-      <div id="appVersion" style="text-align:center;font-size:.7rem;color:var(--text3);margin-bottom:40px"></div>
+      <div class="settings-label">Aplicativo</div>
+      <div class="settings-group">
+        <button class="settings-item" onclick="reloadData()"><span class="si-ico">🔄</span><span class="si-txt"><b>Atualizar dados</b><small>Traz o que foi alterado em outro aparelho</small></span><svg class="si-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="settings-item" onclick="openHelp()"><span class="si-ico">❔</span><span class="si-txt"><b>Ajuda</b><small>O que dá para fazer em cada tela</small></span><svg class="si-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></button>
+        <div class="settings-item"><span class="si-ico">☁️</span><span class="si-txt"><b>Dados na nuvem</b><small>Entre com o mesmo e-mail em qualquer aparelho</small></span></div>
+      </div>
+
+      <button class="btn btn-danger mt-16" style="display:flex;align-items:center;justify-content:center;gap:8px" onclick="doLogout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair da conta</button>
+      <div id="appVersion" style="text-align:center;font-size:.7rem;color:var(--brown);opacity:.75;font-weight:600;margin:16px 0 40px"></div>
     </div>
   </div>
 
@@ -320,9 +369,9 @@
 </div>
 
 <!-- ===== MODALS ===== -->
-<div class="modal-overlay" id="planilhaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="planilhaModalTitle">Nova Planilha</h3><button class="modal-close" onclick="closeModal('planilhaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="form-group"><label>Nome da planilha</label><input class="form-input" id="planilhaNome" placeholder="Ex: Lote 2025"></div><button class="btn btn-primary mt-8" onclick="savePlanilha()">Salvar</button></div></div>
+<div class="modal-overlay" id="planilhaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><div><h3 id="planilhaModalTitle">Nova planilha</h3><p class="modal-sub">Agrupe inseminações (ex.: por mês ou por touro)</p></div><button class="modal-close" onclick="closeModal('planilhaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="form-group"><label>Nome da planilha</label><input class="form-input" id="planilhaNome" placeholder="Ex.: Inseminações novembro" autocomplete="off"></div><button class="btn btn-primary mt-8" onclick="savePlanilha()">Salvar</button></div></div>
 
-<div class="modal-overlay" id="loteModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="loteModalTitle">Novo Lote</h3><button class="modal-close" onclick="closeModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="form-group"><label>Nome do Lote</label><input class="form-input" id="loteNome" placeholder="Ex: Lote Maternidade"></div><button class="btn btn-primary mt-8" onclick="saveLote()">Salvar</button></div></div>
+<div class="modal-overlay" id="loteModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><div><h3 id="loteModalTitle">Novo Lote</h3><p class="modal-sub">Grupo de manejo (ex.: Lactação, Secas, Novilhas)</p></div><button class="modal-close" onclick="closeModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="form-group"><label>Nome do Lote</label><input class="form-input" id="loteNome" placeholder="Ex: Lote Maternidade"></div><button class="btn btn-primary mt-8" onclick="saveLote()">Salvar</button></div></div>
 
 <div class="modal-overlay" id="animalModal"><div class="modal glass form-modal">
 <div class="modal-handle"></div>
@@ -417,17 +466,34 @@
 <datalist id="gsOptions"><option value="PO"><option value="1/2"><option value="3/4"><option value="5/8"><option value="7/8"><option value="15/16"><option value="31/32"><option value="1/4"><option value="3/8"></datalist>
 <datalist id="pelagemOptions"><option value="Preta e branca (malhada)"><option value="Vermelha e branca"><option value="Preta"><option value="Branca"><option value="Vermelha"><option value="Amarela"><option value="Chitada"><option value="Moura"><option value="Gargantilha"><option value="Pintada"></datalist>
 
-<div class="modal-overlay" id="insemAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="insemAnimalModalTitle">Adicionar Inseminação</h3><button class="modal-close" onclick="closeModal('insemAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div class="form-group"><label>Planilha</label><select class="form-input" id="insemPlanSelect"><option value="">Selecione a planilha...</option></select></div>
-<div class="form-group"><label>Adicionar Animal</label><input class="form-input" id="searchInsemAnimal" placeholder="Buscar por nº ou nome..." oninput="filterAnimalSelect('searchInsemAnimal','insemAnimalSelect','insem')" style="margin-bottom:6px;padding:10px 14px;font-size:.8rem"><select class="form-input" id="insemAnimalSelect"><option value="">Selecione o animal...</option></select></div>
-<div id="insemSelectedAnimals" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
-<button class="btn btn-outline btn-xs mb-16" onclick="addInsemAnimal()">+ Adicionar Animal</button>
-<div class="form-group"><label>Data do Procedimento</label><input class="form-input" id="insemData" type="date"></div>
-<div class="flex-row"><div class="form-group"><label>Tempo de Execução</label><input class="form-input" id="insemTempo" placeholder="Ex: 5 min"></div><div class="form-group"><label>Touro Utilizado</label><input class="form-input" id="insemTouro" list="touroOptions" placeholder="Nome/Código"></div></div>
-<div class="form-group"><label>Muco</label><select class="form-input" id="insemMuco"><option>Bom</option><option>Sujo</option><option>Ruim</option></select></div>
-<div class="form-group"><label>Observação</label><textarea class="form-input" id="insemObs" placeholder="Observações..."></textarea></div>
-<button class="btn btn-primary mt-8" onclick="saveInsemAnimal()">Salvar</button></div></div>
-
+<div class="modal-overlay" id="insemAnimalModal"><div class="modal glass form-modal">
+<div class="modal-handle"></div>
+<div class="modal-header"><div><h3 id="insemAnimalModalTitle">Nova inseminação</h3><p class="modal-sub">Registre uma ou várias vacas de uma vez</p></div><button class="modal-close" onclick="closeModal('insemAnimalModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>Planilha e animais</div>
+  <div class="form-group"><label for="insemPlanSelect">Planilha <b class="req">*</b></label><select class="form-input" id="insemPlanSelect"><option value="">Selecione a planilha...</option></select></div>
+  <div class="form-group"><label for="insemAnimalSelect">Animais <b class="req">*</b></label>
+    <input class="form-input pick-search" id="searchInsemAnimal" placeholder="Filtrar por nº ou nome..." aria-label="Filtrar animais" oninput="filterAnimalSelect('searchInsemAnimal','insemAnimalSelect','insem')" autocomplete="off">
+    <select class="form-input" id="insemAnimalSelect" onchange="addInsemAnimal()"><option value="">Selecione o animal...</option></select>
+    <div class="field-hint" id="insemPickHint">Escolha na lista: cada animal escolhido entra abaixo.</div>
+    <div id="insemSelectedAnimals" class="pick-chips"></div>
+  </div>
+</section>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v6.5L4.5 19a1.5 1.5 0 001.3 2.2h12.4a1.5 1.5 0 001.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg>Procedimento</div>
+  <div class="flex-row">
+    <div class="form-group"><label for="insemData">Data</label><input class="form-input" id="insemData" type="date"></div>
+    <div class="form-group"><label for="insemTempo">Tempo de execução</label><input class="form-input" id="insemTempo" placeholder="Ex.: 5 min" autocomplete="off"></div>
+  </div>
+  <div class="form-group"><label for="insemTouro">Touro / sêmen</label><input class="form-input" id="insemTouro" list="touroOptions" placeholder="Nome ou código" autocomplete="off"></div>
+  <div class="form-group"><label>Muco</label>
+    <div class="seg" id="segMuco"><button type="button" data-v="Bom" onclick="setInsemMuco('Bom')">Bom</button><button type="button" data-v="Sujo" onclick="setInsemMuco('Sujo')">Sujo</button><button type="button" data-v="Ruim" onclick="setInsemMuco('Ruim')">Ruim</button></div>
+    <select class="form-input hidden" id="insemMuco"><option>Bom</option><option>Sujo</option><option>Ruim</option></select>
+  </div>
+  <div class="form-group"><label for="insemObs">Observação</label><textarea class="form-input" id="insemObs" rows="2" placeholder="Observações..."></textarea></div>
+</section>
+<div class="form-actions"><button type="button" class="btn btn-primary" onclick="saveInsemAnimal()">Salvar</button></div>
+</div></div>
 <div class="modal-overlay" id="helpModal" data-backdrop-close><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="helpTitle">Ajuda</h3><button class="modal-close" onclick="closeModal('helpModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="helpContent"></div></div></div>
 <datalist id="touroOptions"></datalist>
 <div class="modal-overlay" id="baixaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Dar baixa no animal</h3><button class="modal-close" onclick="closeModal('baixaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
@@ -437,73 +503,99 @@
 <div class="form-group" id="baixaValorGroup"><label>Valor da venda (R$)</label><input class="form-input" id="baixaValor" type="number" step="0.01" inputmode="decimal" placeholder="0,00"></div>
 <div class="form-group"><label>Observações</label><textarea class="form-input" id="baixaObs" placeholder="Opcional"></textarea></div>
 <button class="btn btn-danger mt-8" onclick="confirmBaixa()">Confirmar baixa</button></div></div>
-<div class="modal-overlay" id="parecerModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Parecer da inseminação</h3><button class="modal-close" onclick="closeModal('parecerModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div id="parecerAnimalName" style="font-weight:700;color:var(--text);margin-bottom:6px"></div>
-<div class="card-sub" style="margin-bottom:14px">Selecione a situação do animal após o diagnóstico. Ela será atualizada no rebanho.</div>
-<div class="form-group"><label>Situação</label><div id="parecerOptions" class="flex-row" style="flex-wrap:wrap;gap:8px"></div></div></div></div>
-<div class="modal-overlay" id="tourosModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Touros</h3><button class="modal-close" onclick="closeModal('tourosModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div class="form-group"><label>Nome do touro</label><input class="form-input" id="touroNome" placeholder="Nome"></div>
-<div class="flex-row"><div class="form-group"><label>Raça</label><input class="form-input" id="touroRaca" placeholder="Ex.: Girolando"></div><div class="form-group"><label>Grau de Sangue</label><input class="form-input" id="touroGS" placeholder="Ex.: 5/8, PO"></div></div>
-<div class="form-group"><label>Nº de Registro</label><input class="form-input" id="touroRegistro" placeholder="Ex.: BR 123456"></div>
-<button class="btn btn-primary btn-sm mb-16" style="background:var(--green);color:#fff" onclick="saveTouro()">+ Adicionar touro</button>
-<div id="tourosList"></div>
+<div class="modal-overlay" id="parecerModal" data-backdrop-close><div class="modal glass sheet"><div class="modal-handle"></div>
+<div class="modal-header"><div><h3>Diagnóstico de prenhez</h3><p class="modal-sub">A situação escolhida é aplicada ao animal no rebanho</p></div><button class="modal-close" onclick="closeModal('parecerModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<div class="parecer-animal" id="parecerAnimalName"></div>
+<div id="parecerOptions" class="parecer-grid"></div>
+</div></div>
+<div class="modal-overlay" id="tourosModal"><div class="modal glass wide-modal"><div class="modal-handle"></div>
+<div class="modal-header"><div><h3>Touros e sêmen</h3><p class="modal-sub">Aparecem no campo Touro e como pai dos animais</p></div><button class="modal-close" onclick="closeModal('tourosModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<section class="fsec">
+  <div class="fsec-title" id="touroFormTitle">Cadastrar touro</div>
+  <div class="form-group"><label for="touroNome">Nome <b class="req">*</b></label><input class="form-input" id="touroNome" placeholder="Ex.: Trovão" autocomplete="off"></div>
+  <div class="flex-row"><div class="form-group"><label for="touroRaca">Raça</label><input class="form-input" id="touroRaca" placeholder="Ex.: Gir" autocomplete="off"></div><div class="form-group"><label for="touroGS">Grau de sangue</label><input class="form-input" id="touroGS" list="gsOptions" placeholder="Ex.: PO" autocomplete="off"></div></div>
+  <div class="form-group"><label for="touroRegistro">Nº de registro</label><input class="form-input" id="touroRegistro" placeholder="Ex.: BR 123456" autocomplete="off"></div>
+  <div class="flex-row" style="margin-bottom:12px"><button type="button" class="btn btn-outline hidden" id="touroCancelEdit" onclick="cancelTouroEdit()">Cancelar</button><button type="button" class="btn btn-primary" id="touroSaveBtn" onclick="saveTouro()">Adicionar touro</button></div>
+</section>
+<div class="section-label section-label-dark" id="tourosCount">Cadastrados</div>
+<div id="tourosList" class="ani-list"></div>
 </div></div>
 <div class="modal-overlay" id="fichaModal" data-backdrop-close><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
-<div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div class="form-group"><label>Modo de Seleção</label>
-<div style="display:flex;gap:6px;margin-bottom:12px">
-  <button class="filter-chip active" id="medModeLote" onclick="setMedMode('lote')">Lote inteiro</button>
-  <button class="filter-chip" id="medModeIndiv" onclick="setMedMode('individual')">Individual</button>
+<div class="modal-overlay" id="medAnimalModal"><div class="modal glass form-modal">
+<div class="modal-handle"></div>
+<div class="modal-header"><div><h3 id="medAnimalModalTitle">Nova medicação</h3><p class="modal-sub">Vacina, vermífugo ou tratamento</p></div><button class="modal-close" onclick="closeModal('medAnimalModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5l10-10a4.95 4.95 0 10-7-7l-10 10a4.95 4.95 0 107 7z"/><path d="M8.5 8.5l7 7"/></svg>Tratamento</div>
+  <div class="form-group"><label>Tipo</label>
+    <div class="seg" id="segMedTipo"><button type="button" data-v="Vacina" onclick="setMedTipo('Vacina')">Vacina</button><button type="button" data-v="Vermífugo" onclick="setMedTipo('Vermífugo')">Vermífugo</button><button type="button" data-v="Tratamento" onclick="setMedTipo('Tratamento')">Tratamento</button></div>
+    <select class="form-input hidden" id="medTipo"><option value="Vacina">Vacina</option><option value="Vermífugo">Vermífugo</option><option value="Tratamento">Tratamento</option></select>
+  </div>
+  <div class="flex-row">
+    <div class="form-group"><label for="medDataIni">Início</label><input class="form-input" id="medDataIni" type="date" oninput="updateMedCarHint()"></div>
+    <div class="form-group"><label for="medDataFim">Até quando</label><input class="form-input" id="medDataFim" type="date" oninput="updateMedCarHint()"></div>
+  </div>
+  <div class="form-group"><label>Medicamentos <b class="req">*</b></label>
+    <div id="medMedicamentos"><div class="med-row"><input class="form-input medNomeInput" placeholder="Medicamento" aria-label="Medicamento"><input class="form-input medDoseInput" placeholder="Dose" aria-label="Dose"></div></div>
+    <button type="button" class="add-row-btn" onclick="addMedRow()">+ Adicionar medicamento</button>
+  </div>
+</section>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Animais</div>
+  <div class="form-group"><div class="seg"><button type="button" class="active" id="medModeLote" onclick="setMedMode('lote')">Lote inteiro</button><button type="button" id="medModeIndiv" onclick="setMedMode('individual')">Escolher animais</button></div></div>
+  <div id="medLoteSection">
+    <div class="form-group"><label for="medLoteSelect">Lote</label><select class="form-input" id="medLoteSelect" onchange="loadMedLoteAnimals()"><option value="">Selecione o lote...</option></select></div>
+    <div id="medLoteAnimals" class="check-list"></div>
+  </div>
+  <div id="medIndivSection" class="hidden">
+    <div class="form-group"><label for="medAnimalSelect">Adicionar animal</label><input class="form-input pick-search" id="searchMedAnimal" placeholder="Filtrar por nº ou nome..." aria-label="Filtrar animais" oninput="filterAnimalSelect('searchMedAnimal','medAnimalSelect','med')" autocomplete="off"><select class="form-input" id="medAnimalSelect" onchange="addMedAnimalIndiv()"><option value="">Selecione o animal...</option></select>
+    <div id="medSelectedAnimals" class="pick-chips"></div></div>
+  </div>
+</section>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carência</div>
+  <div class="flex-row">
+    <div class="form-group"><label for="medCarLeite">🥛 Leite (dias)</label><input class="form-input" id="medCarLeite" type="number" min="0" inputmode="numeric" placeholder="0" oninput="updateMedCarHint()"></div>
+    <div class="form-group"><label for="medCarCarne">🥩 Carne (dias)</label><input class="form-input" id="medCarCarne" type="number" min="0" inputmode="numeric" placeholder="0" oninput="updateMedCarHint()"></div>
+  </div>
+  <div class="field-hint" id="medCarHint" style="margin:-6px 0 12px"></div>
+</section>
+<div class="form-actions"><button type="button" class="btn btn-primary" onclick="saveMedAnimal()">Salvar</button></div>
 </div></div>
-<div id="medLoteSection">
-  <div class="form-group"><label>Selecionar Lote</label><select class="form-input" id="medLoteSelect" onchange="loadMedLoteAnimals()"><option value="">Selecione o lote...</option></select></div>
-  <div id="medLoteAnimals" style="max-height:150px;overflow-y:auto;margin-bottom:12px"></div>
-</div>
-<div id="medIndivSection" class="hidden">
-  <div class="form-group"><label>Adicionar Animal</label><input class="form-input" id="searchMedAnimal" placeholder="Buscar por nº ou nome..." oninput="filterAnimalSelect('searchMedAnimal','medAnimalSelect','med')" style="margin-bottom:6px;padding:10px 14px;font-size:.8rem"><select class="form-input" id="medAnimalSelect"><option value="">Selecione o animal...</option></select></div>
-  <div id="medSelectedAnimals" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
-  <button class="btn btn-outline btn-xs mb-16" onclick="addMedAnimalIndiv()">+ Adicionar Animal</button>
-</div>
-<div class="flex-row"><div class="form-group"><label>Início</label><input class="form-input" id="medDataIni" type="date"></div><div class="form-group"><label>Até Quando</label><input class="form-input" id="medDataFim" type="date"></div></div>
-<div class="form-group"><label>Tipo</label><select class="form-input" id="medTipo"><option value="Vacina">Vacina</option><option value="Vermífugo">Vermífugo</option><option value="Tratamento">Tratamento</option></select></div>
-<div class="flex-row"><div class="form-group"><label>Carência leite (dias)</label><input class="form-input" id="medCarLeite" type="number" min="0" inputmode="numeric" placeholder="0"></div><div class="form-group"><label>Carência carne (dias)</label><input class="form-input" id="medCarCarne" type="number" min="0" inputmode="numeric" placeholder="0"></div></div>
-<div id="medMedicamentos">
-  <div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><label style="font-size:.65rem">Medicamento</label><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><label style="font-size:.65rem">Dosagem</label><input class="form-input medDoseInput" placeholder="Dose"></div></div>
-</div>
-<button class="btn btn-outline btn-xs mb-16" onclick="addMedRow()">+ Adicionar Medicamento</button>
-<button class="btn btn-primary mt-8" onclick="saveMedAnimal()">Salvar</button></div></div>
-
-<div class="modal-overlay" id="aliAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="aliAnimalModalTitle">Adicionar Alimentação</h3><button class="modal-close" onclick="closeModal('aliAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div class="form-group"><label>Nome / Título da Dieta</label><input class="form-input" id="aliNomeDieta" placeholder="Ex: Dieta de engorda, Protocolo inverno..."></div>
-<div class="form-group"><label>Tipo de Dieta</label>
-<div id="dietaChecks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
-  <label class="diet-check"><input type="checkbox" value="Pasto" onchange="onDietChange2()"><span>Pasto</span></label>
-  <label class="diet-check"><input type="checkbox" value="Silagem" onchange="onDietChange2()"><span>Silagem</span></label>
-  <label class="diet-check"><input type="checkbox" value="Ração" onchange="onDietChange2()"><span>Ração</span></label>
-  <label class="diet-check"><input type="checkbox" value="Concentrado" onchange="onDietChange2()"><span>Concentrado</span></label>
-  <label class="diet-check"><input type="checkbox" value="Sal mineral" onchange="onDietChange2()"><span>Sal mineral</span></label>
-  <label class="diet-check"><input type="checkbox" value="Farelo" onchange="onDietChange2()"><span>Farelo</span></label>
-  <label class="diet-check"><input type="checkbox" value="Cevada" onchange="onDietChange2()"><span>Cevada</span></label>
-  <label class="diet-check"><input type="checkbox" value="Fubá" onchange="onDietChange2()"><span>Fubá</span></label>
+<div class="modal-overlay" id="aliAnimalModal"><div class="modal glass form-modal">
+<div class="modal-handle"></div>
+<div class="modal-header"><div><h3 id="aliAnimalModalTitle">Nova alimentação</h3><p class="modal-sub">O custo é calculado automaticamente</p></div><button class="modal-close" onclick="closeModal('aliAnimalModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="M12 12C12 7 9 4 5 3c0 5 2.5 8 7 9z"/><path d="M12 15c0-4 2.5-6.5 7-7.5-.5 4.5-3 7-7 7.5z"/></svg>Dieta</div>
+  <div class="form-group"><label for="aliNomeDieta">Nome da dieta</label><input class="form-input" id="aliNomeDieta" placeholder="Ex.: Dieta lactação, Protocolo inverno..." autocomplete="off"></div>
+  <div class="form-group"><label>Ingredientes <b class="req">*</b></label>
+    <div id="dietaChecks" class="chip-grid">
+      <label class="diet-check"><input type="checkbox" value="Pasto" onchange="onDietChange2()"><span>Pasto</span></label>
+      <label class="diet-check"><input type="checkbox" value="Silagem" onchange="onDietChange2()"><span>Silagem</span></label>
+      <label class="diet-check"><input type="checkbox" value="Ração" onchange="onDietChange2()"><span>Ração</span></label>
+      <label class="diet-check"><input type="checkbox" value="Concentrado" onchange="onDietChange2()"><span>Concentrado</span></label>
+      <label class="diet-check"><input type="checkbox" value="Sal mineral" onchange="onDietChange2()"><span>Sal mineral</span></label>
+      <label class="diet-check"><input type="checkbox" value="Farelo" onchange="onDietChange2()"><span>Farelo</span></label>
+      <label class="diet-check"><input type="checkbox" value="Cevada" onchange="onDietChange2()"><span>Cevada</span></label>
+      <label class="diet-check"><input type="checkbox" value="Fubá" onchange="onDietChange2()"><span>Fubá</span></label>
+    </div>
+  </div>
+  <div id="dietDetailFields"></div>
+</section>
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Animais</div>
+  <div class="form-group"><div class="seg"><button type="button" class="active" id="aliModeLote" onclick="setAliMode('lote')">Lote inteiro</button><button type="button" id="aliModeIndiv" onclick="setAliMode('individual')">Escolher animais</button></div></div>
+  <div id="aliLoteSection">
+    <div class="form-group"><label for="aliLoteSelect">Lote</label><select class="form-input" id="aliLoteSelect" onchange="loadAliLoteAnimals()"><option value="">Selecione o lote...</option></select></div>
+    <div id="aliLoteAnimals" class="check-list"></div>
+  </div>
+  <div id="aliIndivSection" class="hidden">
+    <div class="form-group"><label for="aliAnimalSelect">Adicionar animal</label><input class="form-input pick-search" id="searchAliAnimal" placeholder="Filtrar por nº ou nome..." aria-label="Filtrar animais" oninput="filterAnimalSelect('searchAliAnimal','aliAnimalSelect','ali')" autocomplete="off"><select class="form-input" id="aliAnimalSelect" onchange="addAliAnimalNew()"><option value="">Selecione...</option></select>
+    <div id="aliSelectedAnimals" class="pick-chips"></div></div>
+  </div>
+</section>
+<div id="aliCostPreview"></div>
+<div class="form-actions"><button type="button" class="btn btn-primary" onclick="saveAliDirect()">Salvar</button></div>
 </div></div>
-<div id="dietDetailFields"></div>
-<div class="form-group"><label>Modo de Seleção</label>
-<div style="display:flex;gap:6px;margin-bottom:8px">
-  <button class="filter-chip active" id="aliModeLote" onclick="setAliMode('lote')">Lote inteiro</button>
-  <button class="filter-chip" id="aliModeIndiv" onclick="setAliMode('individual')">Individual</button>
-</div></div>
-<div id="aliLoteSection">
-  <div class="form-group"><label>Selecionar Lote</label><select class="form-input" id="aliLoteSelect" onchange="loadAliLoteAnimals()"><option value="">Selecione o lote...</option></select></div>
-  <div id="aliLoteAnimals" style="max-height:150px;overflow-y:auto;margin-bottom:12px"></div>
-</div>
-<div id="aliIndivSection" class="hidden">
-  <div class="form-group"><label>Adicionar Animal</label><input class="form-input" id="searchAliAnimal" placeholder="Buscar por nº ou nome..." oninput="filterAnimalSelect('searchAliAnimal','aliAnimalSelect','ali')" style="margin-bottom:6px;padding:10px 14px;font-size:.8rem"><select class="form-input" id="aliAnimalSelect"><option value="">Selecione...</option></select></div>
-  <div id="aliSelectedAnimals" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
-  <button class="btn btn-outline btn-xs mb-16" onclick="addAliAnimalNew()">+ Adicionar Animal</button>
-</div>
-<div id="aliCostPreview" style="margin-bottom:14px"></div>
-<button class="btn btn-primary" onclick="saveAliDirect()">Salvar</button></div></div>
-
 <div class="confirm-overlay" id="confirmModal">
   <div class="confirm-box glass">
     <div class="confirm-icon" id="confirmIcon">⚠️</div>

@@ -1,97 +1,249 @@
 // ========== MEDICAÇÃO (lote inteiro ou animais individuais) ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown } from './ui.js';
-import { dbInsert, dbInsertMany, dbUpdate, dbDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown, openActionSheet } from './ui.js';
+import { dbInsert, dbInsertMany, dbUpdate, dbDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO, toLocalISO, fmtDateBR } from './data.js';
+import { ICON_DOTS, emptyStateHtml } from './animalRow.js';
+
+const $ = id => document.getElementById(id);
+const TIPO_ICON = { 'Vacina': ['💉', 'pv-info'], 'Vermífugo': ['🪱', 'pv-gold'], 'Tratamento': ['💊', 'pv-bad'] };
+let medFilter = 'all';
 
 registerAnimalSelectProvider('med', () => sortByNum(getAllAnimals().slice()));
 
+// ---------- Situação de cada registro ----------
+const addDays = (iso, n) => { const d = new Date(iso + 'T12:00'); d.setDate(d.getDate() + n); return toLocalISO(d); };
+export function medReleaseDates(r) {
+  const base = r.dataFim || r.dataIni;
+  if (!base) return { leite: '', carne: '' };
+  return {
+    leite: r.carenciaLeite ? addDays(base, parseInt(r.carenciaLeite, 10) || 0) : '',
+    carne: r.carenciaCarne ? addDays(base, parseInt(r.carenciaCarne, 10) || 0) : '',
+  };
+}
+function medStatus(r) {
+  const t = todayISO();
+  if (!r.dataIni) return { k: 'semdata', label: 'Sem data', cls: '' };
+  if (r.dataIni > t) return { k: 'agendada', label: 'Agendada', cls: 'tag-venda' };
+  if (!r.dataFim || r.dataFim >= t) return { k: 'andamento', label: 'Em andamento', cls: 'tag-ok' };
+  const lib = medReleaseDates(r);
+  if ((lib.leite && lib.leite >= t) || (lib.carne && lib.carne >= t)) return { k: 'carencia', label: 'Em carência', cls: 'tag-bad' };
+  return { k: 'encerrada', label: 'Encerrada', cls: '' };
+}
+const daysUntil = iso => Math.round((new Date(iso + 'T12:00') - new Date(todayISO() + 'T12:00')) / 864e5);
+
+// ---------- Lista ----------
+export function setMedFilter(v) {
+  medFilter = v;
+  $('medFilter').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  renderMedDirect();
+}
+
+function renderMedKpis(all) {
+  const st = all.map(r => ({ r, s: medStatus(r) }));
+  const andamento = st.filter(x => x.s.k === 'andamento');
+  const carencia = st.filter(x => {
+    const lib = medReleaseDates(x.r), t = todayISO();
+    return (lib.leite && lib.leite >= t) || (lib.carne && lib.carne >= t);
+  });
+  const animais = new Set(andamento.flatMap(x => (x.r.animais || []).map(a => a.num)));
+  const kpi = (v, l, cls = '') => `<div class="kpi${cls}"><div class="kpi-val">${v}</div><div class="kpi-lbl">${l}</div></div>`;
+  $('medKpis').innerHTML = kpi(andamento.length, 'Em andamento') + kpi(carencia.length, 'Em carência', carencia.length ? ' kpi-bad' : '') + kpi(animais.size, 'Animais tratados') + kpi(all.length, 'Registros');
+  $('medSub').textContent = all.length ? `${all.length} registro(s) de medicação` : 'Vacinas, vermífugos e tratamentos';
+}
+
+export function renderMedDirect() {
+  const container = $('medDirectList');
+  const all = state.db.medDirect;
+  renderMedKpis(all);
+  const q = ($('searchMedicacao')?.value || '').toLowerCase().trim();
+  let items = all.filter(r => {
+    const k = medStatus(r).k;
+    if (medFilter === 'ativas' && !['andamento', 'carencia', 'agendada'].includes(k)) return false;
+    if (medFilter === 'encerradas' && !['encerrada', 'semdata'].includes(k)) return false;
+    if (q) {
+      const hay = [...(r.animais || []).flatMap(x => [x.num, x.nome]), ...(r.medicamentos || []).map(m => m.nome), r.tipo].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }).sort((a, b) => (b.dataIni || '').localeCompare(a.dataIni || ''));
+  if (!items.length) {
+    container.innerHTML = all.length ? emptyStateHtml('Nenhuma medicação com esse filtro.')
+      : emptyStateHtml('Nenhuma medicação registrada.', { label: 'Registrar medicação', onclick: 'openNewMed()' });
+    return;
+  }
+  const t = todayISO();
+  container.innerHTML = items.map(r => {
+    const [ico, cls] = TIPO_ICON[r.tipo] || ['💊', 'pv-bad'];
+    const st = medStatus(r);
+    const meds = (r.medicamentos || []).map(m => `<b>${esc(m.nome)}</b>${m.dose ? ' ' + esc(m.dose) : ''}`).join(' · ');
+    const periodo = r.dataIni ? fmtDateBR(r.dataIni) + (r.dataFim && r.dataFim !== r.dataIni ? ' → ' + fmtDateBR(r.dataFim) : '') : 'Sem data';
+    const lib = medReleaseDates(r);
+    const car = [['🥛 Leite', lib.leite], ['🥩 Carne', lib.carne]].filter(([, d]) => d).map(([l, d]) => {
+      const on = d >= t, dd = daysUntil(d);
+      return `<span class="car-chip${on ? ' on' : ''}">${l} ${on ? `liberado em ${fmtDateBR(d).slice(0, 5)}${dd > 0 ? ` (faltam ${dd}d)` : ' (hoje)'}` : 'liberado'}</span>`;
+    }).join('');
+    const animais = r.animais || [];
+    const chips = animais.slice(0, 6).map(x => `<span class="tag tag-lote">#${esc(x.num)} ${esc(x.nome)}</span>`).join('') + (animais.length > 6 ? `<span class="tag">+${animais.length - 6}</span>` : '');
+    return `<div class="ani-card med-card" onclick="openMedActions('${r.id}')">
+  <div class="rec-ico ${cls}">${ico}</div>
+  <div class="ani-main">
+    <div class="ani-top"><span class="ani-name">${esc(r.tipo || 'Medicação')}</span><span class="tag ${st.cls}">${st.label}</span></div>
+    ${meds ? `<div class="med-names">${meds}</div>` : ''}
+    <div class="ani-meta">📅 ${periodo} · ${animais.length} animal(is)</div>
+    ${car ? `<div class="car-chips">${car}</div>` : ''}
+    <div class="ani-tags">${chips}</div>
+  </div>
+  <button class="ani-more" onclick="event.stopPropagation();openMedActions('${r.id}')" aria-label="Ações">${ICON_DOTS}</button>
+</div>`;
+  }).join('');
+}
+
+export function openMedActions(id) {
+  const r = state.db.medDirect.find(x => x.id === id);
+  if (!r) return;
+  openActionSheet({
+    title: r.tipo || 'Medicação',
+    sub: (r.medicamentos || []).map(m => m.nome).join(', '),
+    actions: [
+      { label: 'Editar', icon: '✏️', fn: () => editMedDirect(id) },
+      { label: 'Repetir (nova aplicação hoje)', icon: '🔁', tone: 'info', fn: () => repeatMed(id) },
+      { label: 'Excluir', icon: '🗑️', tone: 'danger', fn: () => delMedDirect(id) },
+    ],
+  });
+}
+
+// ---------- Formulário ----------
+export function setMedTipo(v) {
+  $('medTipo').value = v;
+  $('segMedTipo').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+}
 export function setMedMode(mode) {
   state.medMode = mode;
-  document.getElementById('medModeLote').classList.toggle('active', mode === 'lote');
-  document.getElementById('medModeIndiv').classList.toggle('active', mode === 'individual');
-  document.getElementById('medLoteSection').classList.toggle('hidden', mode !== 'lote');
-  document.getElementById('medIndivSection').classList.toggle('hidden', mode !== 'individual');
+  $('medModeLote').classList.toggle('active', mode === 'lote');
+  $('medModeIndiv').classList.toggle('active', mode === 'individual');
+  $('medLoteSection').classList.toggle('hidden', mode !== 'lote');
+  $('medIndivSection').classList.toggle('hidden', mode !== 'individual');
+  // A lista com todos os animais só é montada quando o modo individual é usado (abre a janela mais rápido).
+  if (mode === 'individual' && $('medAnimalSelect').options.length <= 1) populateMedSelect();
 }
 export function populateMedLoteSelect() {
-  const sel = document.getElementById('medLoteSelect');
-  sel.innerHTML = '<option value="">Selecione o lote...</option>' + [...state.db.lotes].sort(loteCmp).map(l => `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`).join('');
+  $('medLoteSelect').innerHTML = '<option value="">Selecione o lote...</option>' + [...state.db.lotes].sort(loteCmp).map(l => `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`).join('');
 }
 export function populateMedSelect() {
-  const sel = document.getElementById('medAnimalSelect');
-  sel.innerHTML = '<option value="">Selecione o animal...</option>' + sortByNum(getAllAnimals().slice()).map(a => `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`).join('');
+  $('medAnimalSelect').innerHTML = '<option value="">Selecione o animal...</option>' + sortByNum(getAllAnimals().slice()).map(a => `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`).join('');
 }
 export function loadMedLoteAnimals() {
-  const lid = document.getElementById('medLoteSelect').value;
-  const container = document.getElementById('medLoteAnimals');
-  if (!lid) { container.innerHTML = ''; state.tempMedAnimals = []; return; }
+  const lid = $('medLoteSelect').value;
   const l = state.db.lotes.find(x => x.id === lid);
-  if (!l) return;
-  state.tempMedAnimals = l.animals.map(a => ({ num: a.num, nome: a.nome, included: true }));
+  state.tempMedAnimals = l ? sortByNum(l.animals.map(a => ({ num: a.num, nome: a.nome, included: true }))) : [];
   renderMedLoteList();
 }
 export function renderMedLoteList() {
-  document.getElementById('medLoteAnimals').innerHTML = state.tempMedAnimals.map((a, i) =>
-    `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;margin-bottom:4px;background:${a.included ? 'rgba(78,232,152,0.1)' : 'rgba(255,87,87,0.08)'}"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;font-size:.8rem;color:${a.included ? 'var(--g300)' : 'var(--danger)'}"><input type="checkbox" ${a.included ? 'checked' : ''} onchange="toggleMedAnimalIncluded(${i},this.checked)" style="accent-color:var(--g500)">#${esc(a.num)} ${esc(a.nome)}</label></div>`).join('');
+  const list = state.tempMedAnimals;
+  const n = list.filter(a => a.included).length;
+  $('medLoteAnimals').innerHTML = list.length ? `<div class="check-head"><span>${n} de ${list.length} selecionado(s)</span><button type="button" class="link-btn" onclick="toggleAllMedLote()">${n === list.length ? 'Desmarcar todos' : 'Marcar todos'}</button></div>` +
+    list.map((a, i) => `<label class="check-row${a.included ? ' on' : ''}"><input type="checkbox" ${a.included ? 'checked' : ''} onchange="toggleMedAnimalIncluded(${i},this.checked)"><span class="check-box"></span><span>#${esc(a.num)} ${esc(a.nome)}</span></label>`).join('') : '';
+}
+export function toggleAllMedLote() {
+  const all = state.tempMedAnimals.every(a => a.included);
+  state.tempMedAnimals.forEach(a => { a.included = !all; });
+  renderMedLoteList();
 }
 export function toggleMedAnimalIncluded(i, checked) { state.tempMedAnimals[i].included = checked; renderMedLoteList(); }
 export function addMedAnimalIndiv() {
-  const sel = document.getElementById('medAnimalSelect');
+  const sel = $('medAnimalSelect');
   if (!sel.value) return;
   const [num, nome] = sel.value.split('|');
-  if (state.tempMedAnimals.find(a => a.num === num)) return toast('Já adicionado', 'info');
-  state.tempMedAnimals.push({ num, nome, included: true });
+  if (state.tempMedAnimals.find(a => a.num === num)) toast('Já adicionado', 'info');
+  else state.tempMedAnimals.push({ num, nome, included: true });
   renderMedIndivList();
   sel.selectedIndex = 0;
 }
 export function renderMedIndivList() {
-  document.getElementById('medSelectedAnimals').innerHTML = state.tempMedAnimals.map((a, i) =>
-    `<span class="badge badge-cat" style="cursor:pointer;padding:5px 12px" onclick="removeMedIndivAnimal(${i})">#${esc(a.num)} ${esc(a.nome)} ✕</span>`).join('');
+  const n = state.tempMedAnimals.length;
+  $('medSelectedAnimals').innerHTML = state.tempMedAnimals.map((a, i) =>
+    `<button type="button" class="pick-chip" onclick="removeMedIndivAnimal(${i})">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') + (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
 }
 export function removeMedIndivAnimal(i) { state.tempMedAnimals.splice(i, 1); renderMedIndivList(); }
 
+const medRowHtml = (m = {}, removable = true) => `<div class="med-row"><input class="form-input medNomeInput" placeholder="Medicamento" aria-label="Medicamento" value="${esc(m.nome || '')}"><input class="form-input medDoseInput" placeholder="Dose" aria-label="Dose" value="${esc(m.dose || '')}">${removable ? '<button type="button" class="row-del" onclick="this.parentElement.remove()" aria-label="Remover medicamento">✕</button>' : ''}</div>`;
 export function addMedRow() {
-  document.getElementById('medMedicamentos').insertAdjacentHTML('beforeend',
-    `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><input class="form-input medDoseInput" placeholder="Dose"></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button></div>`);
+  $('medMedicamentos').insertAdjacentHTML('beforeend', medRowHtml());
+  const inputs = $('medMedicamentos').querySelectorAll('.medNomeInput');
+  inputs[inputs.length - 1]?.focus();
 }
 function getMedRows() {
-  const rows = [];
-  document.querySelectorAll('#medMedicamentos .med-row').forEach(r => {
-    const nome = r.querySelector('.medNomeInput').value.trim();
-    const dose = r.querySelector('.medDoseInput').value.trim();
-    if (nome) rows.push({ nome, dose });
-  });
-  return rows;
+  return [...document.querySelectorAll('#medMedicamentos .med-row')].map(r => ({
+    nome: r.querySelector('.medNomeInput').value.trim(), dose: r.querySelector('.medDoseInput').value.trim(),
+  })).filter(m => m.nome);
 }
 function setMedRows(meds) {
-  const container = document.getElementById('medMedicamentos');
-  container.innerHTML = (meds || []).map((m, i) => `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2">${i === 0 ? '<label style="font-size:.65rem">Medicamento</label>' : ''}<input class="form-input medNomeInput" placeholder="Nome" value="${esc(m.nome || '')}"></div><div class="form-group" style="margin-bottom:0;flex:1">${i === 0 ? '<label style="font-size:.65rem">Dosagem</label>' : ''}<input class="form-input medDoseInput" placeholder="Dose" value="${esc(m.dose || '')}"></div>${i > 0 ? '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button>' : ''}</div>`).join('');
-  if (!meds || !meds.length) container.innerHTML = `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><label style="font-size:.65rem">Medicamento</label><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><label style="font-size:.65rem">Dosagem</label><input class="form-input medDoseInput" placeholder="Dose"></div></div>`;
+  const list = meds && meds.length ? meds : [{}];
+  $('medMedicamentos').innerHTML = list.map((m, i) => medRowHtml(m, i > 0)).join('');
+}
+
+export function updateMedCarHint() {
+  const r = { dataIni: $('medDataIni').value, dataFim: $('medDataFim').value, carenciaLeite: $('medCarLeite').value, carenciaCarne: $('medCarCarne').value };
+  const lib = medReleaseDates(r);
+  const parts = [];
+  if (lib.leite) parts.push(`🥛 leite liberado em <b>${fmtDateBR(lib.leite)}</b>`);
+  if (lib.carne) parts.push(`🥩 carne liberada em <b>${fmtDateBR(lib.carne)}</b>`);
+  const el = $('medCarHint');
+  el.innerHTML = parts.join(' · ') || (r.dataIni ? '' : 'Informe o início para calcular a liberação.');
+}
+
+function fillMedForm(r, asNew) {
+  setMedMode('individual');
+  state.tempMedAnimals = (r.animais || []).map(x => ({ num: x.num, nome: x.nome, included: true }));
+  renderMedIndivList();
+  populateMedSelect();
+  $('medDataIni').value = asNew ? todayISO() : (r.dataIni || '');
+  $('medDataFim').value = asNew ? '' : (r.dataFim || '');
+  setMedTipo(r.tipo || 'Vacina');
+  $('medCarLeite').value = r.carenciaLeite || '';
+  $('medCarCarne').value = r.carenciaCarne || '';
+  setMedRows(r.medicamentos);
+  updateMedCarHint();
+}
+export function openNewMed() {
+  state.editAniId = null;
+  openModal('medAnimalModal');
+}
+export function editMedDirect(id) {
+  const r = state.db.medDirect.find(x => x.id === id);
+  if (!r) return;
+  state.editAniId = id;
+  fillMedForm(r, false);
+  $('medAnimalModalTitle').textContent = 'Editar medicação';
+  openModal('medAnimalModal');
+}
+export function repeatMed(id) {
+  const r = state.db.medDirect.find(x => x.id === id);
+  if (!r) return;
+  state.editAniId = null;
+  state.medRepeat = true;
+  fillMedForm(r, true);
+  $('medAnimalModalTitle').textContent = 'Repetir medicação';
+  openModal('medAnimalModal');
 }
 
 export async function saveMedAnimal() {
   if (!requireOnline()) return;
-  let animalsToSave = [];
-  if (state.medMode === 'lote') {
-    animalsToSave = state.tempMedAnimals.filter(a => a.included);
-  } else {
-    animalsToSave = state.tempMedAnimals.filter(a => a.included !== false);
-    if (!animalsToSave.length) {
-      const sel = document.getElementById('medAnimalSelect');
-      if (sel.value) { const [num, nome] = sel.value.split('|'); animalsToSave = [{ num, nome }]; }
-    }
+  let animalsToSave = state.medMode === 'lote' ? state.tempMedAnimals.filter(a => a.included) : state.tempMedAnimals.filter(a => a.included !== false);
+  if (!animalsToSave.length && state.medMode !== 'lote') {
+    const sel = $('medAnimalSelect');
+    if (sel.value) { const [num, nome] = sel.value.split('|'); animalsToSave = [{ num, nome }]; }
   }
-  if (!animalsToSave.length) return toast('Adicione ao menos um animal', 'error');
+  if (!animalsToSave.length) return toast('Escolha ao menos um animal', 'error');
   const meds = getMedRows();
-  if (!meds.length) return toast('Adicione ao menos um medicamento', 'error');
+  if (!meds.length) return toast('Informe ao menos um medicamento', 'error');
+  const ini = $('medDataIni').value || null, fim = $('medDataFim').value || null;
+  if (ini && fim && fim < ini) return toast('A data final não pode ser antes do início', 'error');
 
   const base = {
-    data_ini: document.getElementById('medDataIni').value || null,
-    data_fim: document.getElementById('medDataFim').value || null,
-    tipo: document.getElementById('medTipo').value,
-    carencia_leite: document.getElementById('medCarLeite').value || null,
-    carencia_carne: document.getElementById('medCarCarne').value || null,
+    data_ini: ini, data_fim: fim, tipo: $('medTipo').value,
+    carencia_leite: $('medCarLeite').value || null, carencia_carne: $('medCarCarne').value || null,
   };
-
   await safeRun(async () => {
     let medicacaoId = state.editAniId;
     if (medicacaoId) {
@@ -102,78 +254,52 @@ export async function saveMedAnimal() {
       const row = await dbInsert('medicacoes', base);
       medicacaoId = row.id;
     }
-    if (meds.length) await dbInsertMany('medicacao_medicamentos', meds.map(m => ({ medicacao_id: medicacaoId, nome: m.nome, dose: m.dose || null })));
+    await dbInsertMany('medicacao_medicamentos', meds.map(m => ({ medicacao_id: medicacaoId, nome: m.nome, dose: m.dose || null })));
     await dbInsertMany('medicacao_animais', animalsToSave.map(a => ({ medicacao_id: medicacaoId, num: a.num, nome: a.nome, animal_id: resolveAid(a.num) || null })));
-
     const entry = {
-      id: medicacaoId, dataIni: document.getElementById('medDataIni').value || '', dataFim: document.getElementById('medDataFim').value || '',
-      tipo: base.tipo, carenciaLeite: base.carencia_leite || '', carenciaCarne: base.carencia_carne || '',
+      id: medicacaoId, dataIni: ini || '', dataFim: fim || '', tipo: base.tipo,
+      carenciaLeite: base.carencia_leite || '', carenciaCarne: base.carencia_carne || '',
       medicamentos: meds, animais: animalsToSave.map(a => ({ num: a.num, nome: a.nome, aid: resolveAid(a.num) || '' })),
     };
     const idx = state.db.medDirect.findIndex(x => x.id === medicacaoId);
     if (idx >= 0) state.db.medDirect[idx] = entry; else state.db.medDirect.unshift(entry);
-
     closeModal('medAnimalModal');
     renderMedDirect();
   }, 'Medicação salva!');
 }
 
-export function renderMedDirect() {
-  const container = document.getElementById('medDirectList');
-  const q = (document.getElementById('searchMedicacao')?.value || '').toLowerCase().trim();
-  let items = [...state.db.medDirect];
-  if (q) items = items.filter(a => (a.animais || []).some(x => (x.num || '').toLowerCase().includes(q) || (x.nome || '').toLowerCase().includes(q)));
-  if (!items.length) { container.innerHTML = `<div class="empty-state"><p>${q ? 'Nenhum resultado.' : 'Nenhuma medicação registrada.'}</p></div>`; return; }
-  container.innerHTML = items.map(a => {
-    const animals = a.animais || [];
-    const animalBadges = animals.map(x => `<span class="badge badge-cat" style="margin:1px">#${esc(x.num)} ${esc(x.nome)}</span>`).join('');
-    const medStr = (a.medicamentos || []).map(m => '<strong>' + esc(m.nome) + '</strong>' + (m.dose ? ' · ' + esc(m.dose) : '')).join('<br>');
-    let dateStr = '';
-    if (a.dataIni) dateStr += 'De ' + new Date(a.dataIni + 'T12:00').toLocaleDateString('pt-BR');
-    if (a.dataFim) dateStr += ' até ' + new Date(a.dataFim + 'T12:00').toLocaleDateString('pt-BR');
-    let carStr = '';
-    if (a.carenciaLeite) carStr += '🥛 carência ' + esc(a.carenciaLeite) + 'd';
-    if (a.carenciaCarne) carStr += (carStr ? ' · ' : '') + '🥩 carência ' + esc(a.carenciaCarne) + 'd';
-    return `<div class="animal-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="animal-info">${a.tipo ? '<div class="badges" style="margin-bottom:4px"><span class="badge badge-muco">' + esc(a.tipo) + '</span></div>' : ''}${medStr ? '<div class="detail">' + medStr + '</div>' : ''}${dateStr ? '<div class="detail">' + dateStr + '</div>' : ''}${carStr ? '<div class="detail">' + carStr + '</div>' : ''}</div><div class="animal-actions"><button class="edit-btn" onclick="editMedDirect('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="del-btn" onclick="delMedDirect('${a.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${animalBadges}</div></div>`;
-  }).join('');
-}
-
-export function editMedDirect(aid) {
-  const a = state.db.medDirect.find(x => x.id === aid);
-  if (!a) return;
-  state.editAniId = aid;
-  const animals = a.animais || [];
-  setMedMode('individual');
-  state.tempMedAnimals = animals.map(x => ({ num: x.num, nome: x.nome, included: true }));
-  renderMedIndivList();
-  populateMedSelect();
-  document.getElementById('medDataIni').value = a.dataIni || '';
-  document.getElementById('medDataFim').value = a.dataFim || '';
-  document.getElementById('medTipo').value = a.tipo || 'Vacina';
-  document.getElementById('medCarLeite').value = a.carenciaLeite || '';
-  document.getElementById('medCarCarne').value = a.carenciaCarne || '';
-  setMedRows(a.medicamentos);
-  document.getElementById('medAnimalModalTitle').textContent = 'Editar Medicação';
-  openModal('medAnimalModal');
-}
-export async function delMedDirect(aid) {
-  const ok = await showConfirm('Excluir?', '🗑️');
+export async function delMedDirect(id) {
+  const ok = await showConfirm('Excluir este registro de medicação?', '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('medicacoes', aid);
-    state.db.medDirect = state.db.medDirect.filter(x => x.id !== aid);
+    await dbDelete('medicacoes', id);
+    state.db.medDirect = state.db.medDirect.filter(x => x.id !== id);
     renderMedDirect();
-  }, 'Excluído');
+  }, 'Medicação excluída');
 }
 
 registerModalSetup('medAnimalModal', () => {
   populateMedLoteSelect();
-  populateMedSelect();
-  if (!state.editAniId) { state.medMode = 'lote'; setMedMode('lote'); }
+  $('medAnimalSelect').innerHTML = '<option value="">Selecione o animal...</option>';
+  if (state.medMode === 'individual') populateMedSelect();
+  if (!state.editAniId && !state.medRepeat) {
+    // Novo registro
+    $('medAnimalModalTitle').textContent = 'Nova medicação';
+    state.tempMedAnimals = [];
+    setMedMode('lote');
+    setMedTipo('Vacina');
+    setMedRows([]);
+    renderMedLoteList();
+    renderMedIndivList();
+    $('medDataIni').value = todayISO();
+    updateMedCarHint();
+  }
+  state.medRepeat = false;
 });
 registerModalTeardown('medAnimalModal', () => {
-  const la = document.getElementById('medLoteAnimals'); if (la) la.innerHTML = '';
-  const ms = document.getElementById('medSelectedAnimals'); if (ms) ms.innerHTML = '';
+  $('medLoteAnimals').innerHTML = '';
+  $('medSelectedAnimals').innerHTML = '';
+  $('medCarHint').innerHTML = '';
 });
 
 registerPageEnter('pageMedicacao', renderMedDirect);

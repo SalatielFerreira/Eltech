@@ -6,7 +6,7 @@
 // não existe mais o campo "Manter conectado".
 import { supabase } from '../supabaseClient.js';
 import { state, resetTempSelections } from '../state.js';
-import { toast, safeRun, isValidEmail, isValidName, isValidPassword, switchLoginTab, requireOnline } from './ui.js';
+import { toast, safeRun, isValidEmail, isValidName, isValidPassword, switchLoginTab, requireOnline, goPage } from './ui.js';
 import { loadAllData } from './data.js';
 import { renderHome } from './dashboard.js';
 import { populateTouroOptions } from './touros.js';
@@ -58,6 +58,8 @@ export async function enterApp() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('mainApp').style.display = 'flex';
   document.getElementById('profileName').value = state.db.user.name || 'Usuário';
+  const em = document.getElementById('profileEmail');
+  if (em) em.textContent = state.session.user.email || '';
   const avatarUrl = await getAvatarUrl();
   const img = document.getElementById('avatarImg');
   const placeholder = document.getElementById('avatarPlaceholder');
@@ -65,6 +67,17 @@ export async function enterApp() {
   else { img.removeAttribute('src'); img.style.display = 'none'; placeholder.style.display = 'block'; }
   populateTouroOptions();
   renderHome();
+}
+
+// Recarrega tudo do Supabase (ex.: dados alterados em outro aparelho) e redesenha a tela atual.
+export async function reloadData() {
+  if (!requireOnline()) return;
+  await safeRun(async () => {
+    await loadAllData();
+    populateTouroOptions();
+    const cur = document.querySelector('.page.active')?.id || 'pageHome';
+    goPage(cur);
+  }, 'Dados atualizados!');
 }
 
 export async function doLogout() {

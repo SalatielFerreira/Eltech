@@ -22,7 +22,7 @@ import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
 
-const APP_VERSION = '4.2.0'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = '4.3.0'; // sincronize com sw.js (VERSION) e version.json
 
 // Versão exibida no rodapé de Configurações — único lugar do app onde aparece "Eltech" (a empresa).
 const versionEl = document.getElementById('appVersion');
@@ -35,7 +35,7 @@ Object.assign(window, {
   goPage: ui.goPage, toggleFilterBar: ui.toggleFilterBar, toggleFolder: ui.toggleFolder,
   filterAnimalSelect: ui.filterAnimalSelect,
   // auth.js
-  doLogin: auth.doLogin, doRegister: auth.doRegister, doLogout: auth.doLogout, changePassword: auth.changePassword,
+  doLogin: auth.doLogin, doRegister: auth.doRegister, doLogout: auth.doLogout, changePassword: auth.changePassword, reloadData: auth.reloadData,
   // profile.js
   setAvatar: profile.setAvatar,
   // fotos.js (form de foto do animal)
@@ -61,6 +61,7 @@ Object.assign(window, {
   openBaixaActions: baixas.openBaixaActions, clearBaixaFilters: baixas.clearBaixaFilters,
   // touros.js
   openTouros: touros.openTouros, saveTouro: touros.saveTouro, editTouro: touros.editTouro, delTouro: touros.delTouro,
+  openTouroActions: touros.openTouroActions, cancelTouroEdit: touros.cancelTouroEdit,
   // inseminacao.js
   savePlanilha: inseminacao.savePlanilha, editPlanFromCard: inseminacao.editPlanFromCard, delPlan: inseminacao.delPlan,
   openInsemDetail: inseminacao.openInsemDetail, backToList: inseminacao.backToList, renderAnimals: inseminacao.renderAnimals,
@@ -68,22 +69,27 @@ Object.assign(window, {
   addInsemAnimal: inseminacao.addInsemAnimal, removeTempInsemAnimal: inseminacao.removeTempInsemAnimal,
   saveInsemAnimal: inseminacao.saveInsemAnimal, editInsemAnimal: inseminacao.editInsemAnimal,
   delInsemAnimal: inseminacao.delInsemAnimal, openParecer: inseminacao.openParecer, setParecer: inseminacao.setParecer,
+  openPlanActions: inseminacao.openPlanActions, setInsemFilter: inseminacao.setInsemFilter, setInsemMuco: inseminacao.setInsemMuco,
+  openInsemRecActions: inseminacao.openInsemRecActions,
   // medicacao.js
   setMedMode: medicacao.setMedMode, loadMedLoteAnimals: medicacao.loadMedLoteAnimals,
   toggleMedAnimalIncluded: medicacao.toggleMedAnimalIncluded, addMedAnimalIndiv: medicacao.addMedAnimalIndiv,
   removeMedIndivAnimal: medicacao.removeMedIndivAnimal, addMedRow: medicacao.addMedRow,
   saveMedAnimal: medicacao.saveMedAnimal, renderMedDirect: medicacao.renderMedDirect,
   editMedDirect: medicacao.editMedDirect, delMedDirect: medicacao.delMedDirect,
+  openNewMed: medicacao.openNewMed, setMedTipo: medicacao.setMedTipo, setMedFilter: medicacao.setMedFilter,
+  updateMedCarHint: medicacao.updateMedCarHint, toggleAllMedLote: medicacao.toggleAllMedLote, openMedActions: medicacao.openMedActions,
   // alimentacao.js
   setAliMode: alimentacao.setAliMode, loadAliLoteAnimals: alimentacao.loadAliLoteAnimals,
   toggleAliAnimalIncluded: alimentacao.toggleAliAnimalIncluded, addAliAnimalNew: alimentacao.addAliAnimalNew,
   removeAliAnimal: alimentacao.removeAliAnimal, onDietChange2: alimentacao.onDietChange2,
   calcAliCost: alimentacao.calcAliCost,
   saveAliDirect: alimentacao.saveAliDirect, editAliDirect: alimentacao.editAliDirect, delAliDirect: alimentacao.delAliDirect,
+  openNewAli: alimentacao.openNewAli, openAliActions: alimentacao.openAliActions, toggleAllAliLote: alimentacao.toggleAllAliLote,
   // dashboard.js
-  setChartFilter: dashboard.setChartFilter,
+  setChartFilter: dashboard.setChartFilter, quickAction: dashboard.quickAction, toggleAlerts: dashboard.toggleAlerts,
   // relatorios.js
-  toggleAllReportSources: relatorios.toggleAllReportSources, downloadReport: relatorios.downloadReport,
+  toggleAllReportSources: relatorios.toggleAllReportSources, downloadReport: relatorios.downloadReport, updateReportSummary: relatorios.updateReportSummary,
   // help.js
   openHelp: help.openHelp,
 });

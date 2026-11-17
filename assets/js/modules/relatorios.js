@@ -3,29 +3,42 @@ import { state } from '../state.js';
 import { esc, toast, registerPageEnter } from './ui.js';
 import { loteCmp, sortByNum, ageMonths, ageDays, getInsemDate } from './data.js';
 
+// Fontes agrupadas em chips: Rebanho (lotes), Inseminação (planilhas) e Manejo.
 export function populateReportSources() {
   const container = document.getElementById('reportSourceChecks');
-  const parts = [];
+  const chip = (value, label, count) => `<label class="diet-check"><input type="checkbox" value="${value}"><span>${esc(label)} <em>${count}</em></span></label>`;
+  const group = (title, chips) => chips.length ? `<div class="src-group"><div class="src-title">${title}</div><div class="chip-grid">${chips.join('')}</div></div>` : '';
+  const lotes = [...state.db.lotes].sort(loteCmp).map(l => chip('lote:' + l.id, l.name, l.animals.length));
+  const insem = [...state.db.inseminacao].sort(loteCmp).map(p => chip('inseminacao:' + p.id, p.name, p.animals.length));
+  const manejo = [];
+  if (state.db.medDirect.length) manejo.push(chip('medicacao', 'Medicação', state.db.medDirect.length));
+  if (state.db.aliDirect.length) manejo.push(chip('alimentacao', 'Alimentação', state.db.aliDirect.length));
+  container.innerHTML = (group('🐄 Rebanho (lotes)', lotes) + group('🔬 Inseminação (planilhas)', insem) + group('💊 Manejo', manejo)) ||
+    '<div class="card-sub">Ainda não há dados para relatório.</div>';
   const selAllBtn = document.getElementById('btnSelAllSources');
   if (selAllBtn) selAllBtn.textContent = 'Selecionar todos';
-  [...state.db.lotes].sort(loteCmp).forEach(l => {
-    parts.push(`<label class="report-check"><input type="checkbox" value="lote:${l.id}"><span>Rebanho — ${esc(l.name)} (${l.animals.length})</span></label>`);
-  });
-  if (state.db.medDirect.length) parts.push(`<label class="report-check"><input type="checkbox" value="medicacao"><span>Medicação (${state.db.medDirect.length})</span></label>`);
-  if (state.db.aliDirect.length) parts.push(`<label class="report-check"><input type="checkbox" value="alimentacao"><span>Alimentação (${state.db.aliDirect.length})</span></label>`);
-  [...state.db.inseminacao].sort(loteCmp).forEach(p => {
-    parts.push(`<label class="report-check"><input type="checkbox" value="inseminacao:${p.id}"><span>Insem. — ${esc(p.name)} (${p.animals.length})</span></label>`);
-  });
-  container.innerHTML = parts.join('');
+  updateReportSummary();
 }
 export function toggleAllReportSources() {
   const boxes = [...document.querySelectorAll('#reportSourceChecks input[type=checkbox]')];
   if (!boxes.length) return;
   const allChecked = boxes.every(b => b.checked);
   boxes.forEach(b => b.checked = !allChecked);
-  const btn = document.getElementById('btnSelAllSources');
-  if (btn) btn.textContent = allChecked ? 'Selecionar todos' : 'Desmarcar todos';
+  updateReportSummary();
 }
+// Resumo ao vivo do que vai sair no relatório.
+export function updateReportSummary() {
+  const el = document.getElementById('reportSummary');
+  if (!el) return;
+  const boxes = [...document.querySelectorAll('#reportSourceChecks input[type=checkbox]')];
+  const n = boxes.filter(b => b.checked).length;
+  const btn = document.getElementById('btnSelAllSources');
+  if (btn && boxes.length) btn.textContent = n === boxes.length ? 'Desmarcar todos' : 'Selecionar todos';
+  const total = n ? getFiltered().animals.length : 0;
+  el.textContent = n ? `${n} fonte(s) · ${total} registro(s) no relatório` : 'Selecione ao menos uma fonte';
+  document.querySelectorAll('.dl-btn').forEach(b => b.classList.toggle('disabled', !total));
+}
+document.getElementById('reportSourceChecks')?.addEventListener('change', updateReportSummary);
 
 function getFiltered() {
   const checks = document.querySelectorAll('#reportSourceChecks input[type=checkbox]:checked');

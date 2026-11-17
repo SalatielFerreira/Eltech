@@ -13,7 +13,7 @@
    aviso "Nova versão disponível" para quem já tem o app aberto.
    (Mantenha igual em main.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '4.2.0';
+const VERSION = '4.3.0';
 const CACHE = 'farm-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.

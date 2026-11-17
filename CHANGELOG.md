@@ -2,6 +2,47 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.3.0] — 2026-11-17
+
+### Todas as telas redesenhadas no padrão do Rebanho
+
+- **Início:** cartão de boas-vindas com saudação, data, total de animais, lotes e leite/dia;
+  **atalhos** que já abrem o formulário (Animal, Inseminação, Medicação, Alimentação);
+  **Painel da fazenda** com anel da taxa de prenhez, vacas em lactação, média de leite por
+  vaca, animais em tratamento e custo de ração; **alertas por urgência** (resumo por tipo,
+  5 visíveis + "ver todos", toque abre a ficha do animal) e gráfico em rosca com **legenda
+  em barras** e porcentagens. Gráficos agora ficam nítidos em telas de alta resolução.
+- **Inseminação:** indicadores (últimos 30 dias, aguardando diagnóstico, prenhas, taxa de
+  concepção); planilhas com **barra de resultado** (prenhas/vazias/aguardando); dentro da
+  planilha, filtro Todas/Aguardando/Prenhas/Vazias, aviso "Pronta p/ diagnóstico" após 28
+  dias e botão **Dar diagnóstico**; diagnóstico em botões grandes (Prenha primeiro);
+  formulário em seções, data já preenchida com hoje, muco em botões e escolha de várias
+  vacas direto na lista.
+- **Touros e sêmen:** janela nova com contagem de inseminações por touro e menu ⋮.
+- **Medicação:** indicadores (em andamento, em carência, animais tratados); filtro
+  Todas/Ativas/Encerradas; cada registro mostra a situação e **quando leite e carne ficam
+  liberados**; formulário com tipo em botões, marcar/desmarcar todos do lote, dica da data de
+  liberação e opção **Repetir** (nova aplicação hoje, útil para reforço de vacina).
+- **Alimentação:** indicadores (custo total, por animal, registros, animais), **custo por
+  ingrediente** em barras, cartões com custo em destaque, formulário com tabela de
+  ingredientes e **resumo de custo ao vivo**; opção **Repetir** registro.
+- **Relatórios:** em 4 passos (fontes agrupadas, filtros, colunas, baixar) com resumo ao
+  vivo de quantos registros vão sair; botões grandes de PDF e Excel.
+- **Configurações:** cartão de perfil com e-mail, "Alterar senha" recolhível, **Atualizar
+  dados** (traz alterações feitas em outro aparelho) e Ajuda.
+- **Barra inferior:** destaque da aba ativa.
+
+### Correções
+
+- Medicação começando hoje não aparecia como "em andamento" no Início no primeiro dia.
+- Dias restantes de carência podiam diferir em 1 entre o Início e a Medicação.
+- Na Alimentação, marcar um novo ingrediente apagava os valores já digitados nos outros.
+- Editar uma alimentação mudava a data dela para o dia da edição.
+- Editar uma inseminação trocando a planilha deixava o registro na planilha antiga na tela.
+- O filtro do gráfico do Início desmarcava botões de outras telas.
+- Janelas de Medicação e Alimentação abrem mais rápido (a lista de todos os animais só é
+  montada ao escolher "Escolher animais").
+
 ## [4.2.0] — 2026-11-17
 
 ### Desempenho (telas e janelas mais leves)
