@@ -1,7 +1,7 @@
 // ========== HOME (painel do sítio, gráfico, alertas) ==========
 import { state } from '../state.js';
 import { esc, registerPageEnter } from './ui.js';
-import { getAllAnimals } from './data.js';
+import { getAllAnimals, todayISO } from './data.js';
 import { drawPie } from './charts.js';
 import { GESTACAO_DIAS } from './constants.js';
 
@@ -18,7 +18,7 @@ export function renderHome() {
   const greet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
   document.getElementById('statGrid').innerHTML = `<div style="grid-column:1/-1;margin-bottom:4px"><p style="font-size:1rem;font-weight:700;color:var(--brown)">${greet}, ${esc(state.db.user.name || 'Usuário')}!</p><p style="font-size:.75rem;color:var(--brown);margin-top:2px">${new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><div class="stat-card glass2 anim-fade"><div class="stat-icon">🐄</div><div class="stat-val">${all.length}</div><div class="stat-lbl">Total Animais</div></div><div class="stat-card glass2 anim-fade anim-d1"><div class="stat-icon">📋</div><div class="stat-val">${state.db.lotes.length}</div><div class="stat-lbl">Lotes</div></div>`;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayISO();
   const counts = {};
   const medNums = new Set();
   state.db.medDirect.forEach(rec => {

@@ -15,13 +15,11 @@ export function setAliMode(mode) {
 }
 export function populateAliLoteSelect() {
   const sel = document.getElementById('aliLoteSelect');
-  sel.innerHTML = '<option value="">Selecione o lote...</option>';
-  [...state.db.lotes].sort(loteCmp).forEach(l => { sel.innerHTML += `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`; });
+  sel.innerHTML = '<option value="">Selecione o lote...</option>' + [...state.db.lotes].sort(loteCmp).map(l => `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`).join('');
 }
 export function populateAliAnimalSelect2() {
   const sel = document.getElementById('aliAnimalSelect');
-  sel.innerHTML = '<option value="">Selecione...</option>';
-  sortByNum(getAllAnimals().slice()).forEach(a => { sel.innerHTML += `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`; });
+  sel.innerHTML = '<option value="">Selecione...</option>' + sortByNum(getAllAnimals().slice()).map(a => `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`).join('');
 }
 export function loadAliLoteAnimals() {
   const lid = document.getElementById('aliLoteSelect').value;
@@ -57,12 +55,7 @@ export function removeAliAnimal(i) { state.tempAliAnimals.splice(i, 1); renderTe
 export function onDietChange2() {
   const checks = document.querySelectorAll('#dietaChecks input[type=checkbox]');
   const container = document.getElementById('dietDetailFields');
-  container.innerHTML = '';
-  checks.forEach(cb => {
-    if (cb.checked) {
-      container.innerHTML += `<div class="diet-qtd" style="flex-direction:column;gap:6px;padding:12px 14px"><div class="diet-label" style="min-width:auto;margin-bottom:4px">${cb.value}</div><div class="flex-row"><div class="form-group" style="margin-bottom:0"><label style="font-size:.65rem">Valor/kg (R$)</label><input class="form-input" id="dietVal_${cb.value}" type="number" step="0.01" placeholder="R$/kg" style="padding:9px 12px;font-size:.82rem" oninput="calcAliCost()"></div><div class="form-group" style="margin-bottom:0"><label style="font-size:.65rem">Consumo/animal (kg)</label><input class="form-input" id="dietKg_${cb.value}" type="number" step="0.1" placeholder="kg/animal" style="padding:9px 12px;font-size:.82rem" oninput="calcAliCost()"></div></div></div>`;
-    }
-  });
+  container.innerHTML = [...checks].filter(cb => cb.checked).map(cb => `<div class="diet-qtd" style="flex-direction:column;gap:6px;padding:12px 14px"><div class="diet-label" style="min-width:auto;margin-bottom:4px">${cb.value}</div><div class="flex-row"><div class="form-group" style="margin-bottom:0"><label style="font-size:.65rem">Valor/kg (R$)</label><input class="form-input" id="dietVal_${cb.value}" type="number" step="0.01" placeholder="R$/kg" style="padding:9px 12px;font-size:.82rem" oninput="calcAliCost()"></div><div class="form-group" style="margin-bottom:0"><label style="font-size:.65rem">Consumo/animal (kg)</label><input class="form-input" id="dietKg_${cb.value}" type="number" step="0.1" placeholder="kg/animal" style="padding:9px 12px;font-size:.82rem" oninput="calcAliCost()"></div></div></div>`).join('');
   calcAliCost();
 }
 export function calcAliCost() {

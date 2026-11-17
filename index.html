@@ -13,6 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FARM">
 <link rel="apple-touch-icon" href="assets/img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://esm.sh" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/styles.css">
 </head>
@@ -84,49 +87,109 @@
     <!-- REBANHO -->
     <div class="page" id="pageRebanho">
       <div id="rebanhoHome">
-        <div class="section-header"><h2>Rebanho</h2></div>
-        <div class="rebanho-tiles">
-          <button class="rtile" onclick="openRebanhoView('animais')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span class="rtile-label">Todos os Animais</span><span class="rtile-count" id="cntAnimais">0</span></button>
-          <button class="rtile" onclick="openRebanhoView('lotes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span class="rtile-label">Lotes</span><span class="rtile-count" id="cntLotes">0</span></button>
-          <button class="rtile wide" onclick="openRebanhoView('baixas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><line x1="10" y1="12" x2="14" y2="12"/></svg><span class="rtile-label">Baixas</span><span class="rtile-count" id="cntBaixas">0</span></button>
+        <div class="page-head">
+          <div><h2>Rebanho</h2><p class="page-sub" id="rebanhoSub"></p></div>
+          <button class="add-btn" onclick="openNewAnimal()" aria-label="Adicionar animal" title="Adicionar animal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
+        <div class="herd-kpis" id="herdKpis"></div>
+        <div class="rtiles">
+          <button class="rtile" onclick="openRebanhoView('animais')">
+            <span class="rtile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+            <span class="rtile-txt"><span class="rtile-label">Todos os animais</span><span class="rtile-hint">Buscar, filtrar e abrir a ficha</span></span>
+            <span class="rtile-count" id="cntAnimais">0</span>
+            <svg class="rtile-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="rtile" onclick="openRebanhoView('lotes')">
+            <span class="rtile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></span>
+            <span class="rtile-txt"><span class="rtile-label">Lotes</span><span class="rtile-hint">Grupos de manejo do rebanho</span></span>
+            <span class="rtile-count" id="cntLotes">0</span>
+            <svg class="rtile-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="rtile" onclick="openRebanhoView('baixas')">
+            <span class="rtile-ico rtile-ico-muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><line x1="10" y1="12" x2="14" y2="12"/></svg></span>
+            <span class="rtile-txt"><span class="rtile-label">Baixas</span><span class="rtile-hint">Animais vendidos ou mortos</span></span>
+            <span class="rtile-count" id="cntBaixas">0</span>
+            <svg class="rtile-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div id="herdComposition"></div>
       </div>
+
       <div id="animaisView" class="hidden">
-        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
-        <div class="section-header"><h2>Todos os Animais</h2><div style="display:flex;gap:8px"><button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
-        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchAnimais" placeholder="Buscar por nº ou nome..." oninput="renderAnimaisFolder()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterAnimais')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
-        <div id="filterAnimais" class="hidden" style="margin-bottom:12px"><div class="flex-row" style="gap:6px"><select class="form-input" id="fAnSexo" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select><select class="form-input" id="fAnCat" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select><select class="form-input" id="fAnSit" onchange="renderAnimaisFolder()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select></div></div>
-        <div id="animaisList"></div>
+        <div class="view-head">
+          <button class="back-icon" onclick="backToRebanhoHome()" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="view-title"><h2>Todos os animais</h2><span class="view-sub" id="animaisSub"></span></div>
+          <button class="add-btn" onclick="openNewAnimal()" aria-label="Adicionar animal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+        <div class="folder-tools">
+          <div class="search-bar"><input type="search" id="searchAnimais" aria-label="Buscar animal" placeholder="Buscar por nº, nome ou brinco..." oninput="renderAnimaisFolder()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+          <button id="btnFilterAnimais" onclick="toggleFilterBar('filterAnimais')" title="Filtrar e ordenar" aria-label="Filtrar e ordenar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg><span class="fbadge hidden"></span></button>
+        </div>
+        <div id="filterAnimais" class="filter-panel hidden">
+          <div class="filter-grid">
+            <label class="fp-field"><span>Sexo</span><select class="form-input" id="fAnSexo" onchange="renderAnimaisFolder()"><option value="">Todos</option><option>Fêmea</option><option>Macho</option></select></label>
+            <label class="fp-field"><span>Categoria</span><select class="form-input" id="fAnCat" onchange="renderAnimaisFolder()"><option value="">Todas</option><option>Bezerra</option><option>Novilha</option><option>Vaca em lactação</option><option>Vaca seca</option><option>Bezerro</option><option>Garrote</option><option>Boi</option><option>Touro</option></select></label>
+            <label class="fp-field"><span>Situação</span><select class="form-input" id="fAnSit" onchange="renderAnimaisFolder()"><option value="">Todas</option><option>Prenha</option><option>Vazia</option><option>Vazia Cloe</option><option>Vazia Clod</option><option>Cio</option><option>Anestro</option><option>Não se aplica</option></select></label>
+            <label class="fp-field"><span>Lote</span><select class="form-input" id="fAnLote" onchange="renderAnimaisFolder()"><option value="">Todos</option></select></label>
+            <label class="fp-field fp-wide"><span>Ordenar por</span><select class="form-input" id="fAnSort" onchange="renderAnimaisFolder()"><option value="num">Nº do animal</option><option value="nome">Nome (A–Z)</option><option value="leite">Maior produção de leite</option><option value="novos">Mais novos</option><option value="velhos">Mais velhos</option></select></label>
+          </div>
+          <button type="button" class="fp-clear" onclick="clearAnimalFilters()">Limpar filtros</button>
+        </div>
+        <div id="animaisList" class="ani-list"></div>
       </div>
+
       <div id="lotesView" class="hidden">
-        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
-        <div class="section-header"><h2>Lotes</h2><div style="display:flex;gap:8px"><button class="add-btn" onclick="openModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></button><button class="add-btn" onclick="openModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
-        <div class="search-bar"><input type="text" id="searchLotesFolder" placeholder="Buscar lote pelo nome..." oninput="renderLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <div class="view-head">
+          <button class="back-icon" onclick="backToRebanhoHome()" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="view-title"><h2>Lotes</h2><span class="view-sub" id="lotesSub"></span></div>
+          <button class="add-btn" onclick="openModal('loteModal')" aria-label="Novo lote" title="Novo lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M12 11v6M9 14h6"/></svg></button>
+        </div>
+        <div class="search-bar"><input type="search" id="searchLotesFolder" aria-label="Buscar lote" placeholder="Buscar lote pelo nome..." oninput="renderLotes()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
         <div id="lotesList"></div>
       </div>
+
       <div id="baixasView" class="hidden">
-        <button class="back-btn" onclick="backToRebanhoHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
-        <div class="section-header"><h2>Baixas</h2></div>
-        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchBaixas" placeholder="Buscar por nº ou nome..." oninput="renderBaixas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleFilterBar('filterBaixas')" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
-        <div id="filterBaixas" class="hidden" style="margin-bottom:12px"><div class="flex-row" style="gap:6px"><select class="form-input" id="fBaixaTipo" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Motivo</option><option value="venda">Venda</option><option value="morte">Morte</option></select><select class="form-input" id="fBaixaSexo" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select><select class="form-input" id="fBaixaCat" onchange="renderBaixas()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select></div></div>
+        <div class="view-head">
+          <button class="back-icon" onclick="backToRebanhoHome()" aria-label="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="view-title"><h2>Baixas</h2><span class="view-sub" id="baixasSub"></span></div>
+        </div>
+        <div class="baixa-summary" id="baixaSummary"></div>
+        <div class="folder-tools">
+          <div class="search-bar"><input type="search" id="searchBaixas" aria-label="Buscar baixa" placeholder="Buscar por nº ou nome..." oninput="renderBaixas()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+          <button id="btnFilterBaixas" onclick="toggleFilterBar('filterBaixas')" title="Filtrar" aria-label="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg><span class="fbadge hidden"></span></button>
+        </div>
+        <div id="filterBaixas" class="filter-panel hidden">
+          <div class="filter-grid">
+            <label class="fp-field"><span>Motivo</span><select class="form-input" id="fBaixaTipo" onchange="renderBaixas()"><option value="">Todos</option><option value="venda">Venda</option><option value="morte">Morte</option></select></label>
+            <label class="fp-field"><span>Sexo</span><select class="form-input" id="fBaixaSexo" onchange="renderBaixas()"><option value="">Todos</option><option>Fêmea</option><option>Macho</option></select></label>
+            <label class="fp-field fp-wide"><span>Categoria</span><select class="form-input" id="fBaixaCat" onchange="renderBaixas()"><option value="">Todas</option><option>Bezerra</option><option>Novilha</option><option>Vaca em lactação</option><option>Vaca seca</option><option>Bezerro</option><option>Garrote</option><option>Boi</option><option>Touro</option></select></label>
+          </div>
+          <button type="button" class="fp-clear" onclick="clearBaixaFilters()">Limpar filtros</button>
+        </div>
         <div id="baixasList"></div>
       </div>
+
       <div id="loteDetail" class="hidden">
-        <button class="back-btn" onclick="backToLotes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>Voltar</button>
-        <div class="section-header"><h2 id="loteDetailTitle"></h2>
-          <div style="display:flex;gap:8px">
-            <button class="add-btn" onclick="openAnimalForLote()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
-          </div>
+        <div class="view-head">
+          <button class="back-icon" onclick="backToLotes()" aria-label="Voltar para lotes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="view-title"><h2 id="loteDetailTitle"></h2><span class="view-sub" id="loteDetailSub"></span></div>
+          <button class="icon-btn" onclick="openLoteActions()" aria-label="Opções do lote"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+          <button class="add-btn" onclick="openAnimalForLote()" aria-label="Adicionar animal neste lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
-        <div class="folder-tools"><div class="search-bar"><input type="text" id="searchLote" placeholder="Buscar por nº ou nome..." oninput="renderLoteAnimals()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div><button onclick="toggleLoteFilter()" title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button></div>
-        <div id="loteFilterBar" class="hidden" style="margin-bottom:14px">
-          <div class="flex-row" style="gap:6px">
-            <select class="form-input" id="filterSexo" onchange="renderLoteAnimals()" style="padding:9px 12px;font-size:.78rem"><option value="">Sexo</option><option>Macho</option><option>Fêmea</option></select>
-            <select class="form-input" id="filterCat" onchange="renderLoteAnimals()" style="padding:9px 12px;font-size:.78rem"><option value="">Categoria</option><option>Bezerro</option><option>Bezerra</option><option>Garrote</option><option>Novilha</option><option>Boi</option><option>Vaca seca</option><option>Vaca em lactação</option><option>Touro</option></select>
-            <select class="form-input" id="filterSit" onchange="renderLoteAnimals()" style="padding:9px 12px;font-size:.78rem"><option value="">Situação</option><option>Não se aplica</option><option>Anestro</option><option>Vazia</option><option>Prenha</option></select>
-          </div>
+        <div class="lote-stats" id="loteDetailStats"></div>
+        <div class="folder-tools">
+          <div class="search-bar"><input type="search" id="searchLote" aria-label="Buscar animal no lote" placeholder="Buscar por nº, nome ou brinco..." oninput="renderLoteAnimals()" autocomplete="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+          <button id="btnFilterLote" onclick="toggleLoteFilter()" title="Filtrar" aria-label="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg><span class="fbadge hidden"></span></button>
         </div>
-        <div id="loteAnimals"></div>
+        <div id="loteFilterBar" class="filter-panel hidden">
+          <div class="filter-grid">
+            <label class="fp-field"><span>Sexo</span><select class="form-input" id="filterSexo" onchange="renderLoteAnimals()"><option value="">Todos</option><option>Fêmea</option><option>Macho</option></select></label>
+            <label class="fp-field"><span>Categoria</span><select class="form-input" id="filterCat" onchange="renderLoteAnimals()"><option value="">Todas</option><option>Bezerra</option><option>Novilha</option><option>Vaca em lactação</option><option>Vaca seca</option><option>Bezerro</option><option>Garrote</option><option>Boi</option><option>Touro</option></select></label>
+            <label class="fp-field fp-wide"><span>Situação</span><select class="form-input" id="filterSit" onchange="renderLoteAnimals()"><option value="">Todas</option><option>Prenha</option><option>Vazia</option><option>Vazia Cloe</option><option>Vazia Clod</option><option>Cio</option><option>Anestro</option><option>Não se aplica</option></select></label>
+          </div>
+          <button type="button" class="fp-clear" onclick="clearLoteFilters()">Limpar filtros</button>
+        </div>
+        <div id="loteAnimals" class="ani-list"></div>
       </div>
     </div>
 
@@ -203,6 +266,10 @@
             <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="prenha"><span>Dias Prenha</span></label>
             <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="insem"><span>Últ. Insem.</span></label>
             <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="lote"><span>Lote</span></label>
+            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="brinco"><span>Brinco</span></label>
+            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="registro"><span>Registro</span></label>
+            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="pelagem"><span>Pelagem</span></label>
+            <label class="diet-check" style="font-size:.72rem;padding:5px 10px"><input type="checkbox" value="obs"><span>Obs.</span></label>
           </div>
         </div>
       </div>
@@ -257,26 +324,98 @@
 
 <div class="modal-overlay" id="loteModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="loteModalTitle">Novo Lote</h3><button class="modal-close" onclick="closeModal('loteModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="form-group"><label>Nome do Lote</label><input class="form-input" id="loteNome" placeholder="Ex: Lote Maternidade"></div><button class="btn btn-primary mt-8" onclick="saveLote()">Salvar</button></div></div>
 
-<div class="modal-overlay" id="animalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="animalModalTitle">Adicionar Animal</h3><button class="modal-close" onclick="closeModal('animalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-<div class="form-group" style="text-align:center"><label>Foto do animal</label><div class="animal-photo-field"><img id="animalPhotoPreview" alt="" style="display:none"><span id="animalPhotoPlaceholder">🐄</span><input type="file" id="animalPhotoInput" accept="image/*" capture="environment" onchange="onAnimalPhoto(event)"></div><button type="button" id="animalPhotoRemove" onclick="removeAnimalPhoto()" style="display:none;background:none;border:none;color:var(--danger);font-size:.72rem;cursor:pointer;margin-top:6px">Remover foto</button></div>
-<div class="flex-row"><div class="form-group"><label>Nº do Animal</label><input class="form-input" id="animalNum" placeholder="001"></div><div class="form-group"><label>Nome</label><input class="form-input" id="animalNome" placeholder="Mimosa"></div></div>
-<div class="flex-row"><div class="form-group"><label>Origem</label><select class="form-input" id="animalOrigem" onchange="onOrigemChange()"><option value="Nascido">Nascido na propriedade</option><option value="Comprado">Comprado</option></select></div><div class="form-group"><label>Data de Nascimento</label><input class="form-input" id="animalDataNasc" type="date"></div></div>
-<div class="form-group"><label>Lote</label><select class="form-input" id="animalLote"><option value="">Selecione...</option></select></div>
-<div class="flex-row"><div class="form-group"><label>Sexo</label><select class="form-input" id="animalSexo" onchange="onSexoChange()"><option value="Macho">Macho</option><option value="Fêmea">Fêmea</option></select></div><div class="form-group"><label>Categoria</label><select class="form-input" id="animalCat" onchange="onCatChange()"></select></div></div>
-<div class="flex-row"><div class="form-group"><label>Situação</label><select class="form-input" id="animalSit" disabled onchange="onSitChange()"></select></div><div class="form-group"><label>Raça</label><select class="form-input" id="animalRaca"><option value="">Selecione...</option><option>Holandesa</option><option>Jersey</option><option>Girolando</option><option>Gir</option><option>Ayrshire</option><option>Nelore</option><option>Brahman</option><option>Tabapuã</option></select></div></div>
-<div class="form-group"><label>Grau de Sangue (GS)</label><input class="form-input" id="animalGrauSangue" placeholder="Ex.: 1/2, 5/8, 3/4, PO"></div>
-<div id="paiMaeNascido">
-  <div class="form-group"><label>Tipo de Prenhez</label><select class="form-input" id="animalTipoPrenhez"><option value="Natural">Natural</option><option value="Inseminada">Inseminada</option></select></div>
-  <div class="form-group"><label>Mãe (do rebanho)</label><select class="form-input" id="animalMaeSelect"><option value="">Selecione...</option></select></div>
-  <div class="form-group"><label>Pai (touro do rebanho ou inseminação)</label><select class="form-input" id="animalPaiSelect"><option value="">Selecione...</option></select></div>
+<div class="modal-overlay" id="animalModal"><div class="modal glass form-modal">
+<div class="modal-handle"></div>
+<div class="modal-header"><div><h3 id="animalModalTitle">Adicionar Animal</h3><p class="modal-sub">Campos com <b class="req">*</b> são obrigatórios</p></div><button class="modal-close" onclick="closeModal('animalModal')" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h3"/></svg>Identificação</div>
+  <div class="id-row">
+    <div class="photo-col">
+      <div class="animal-photo-field" title="Adicionar foto"><img id="animalPhotoPreview" alt="" style="display:none"><span id="animalPhotoPlaceholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><small>Foto</small></span><input type="file" id="animalPhotoInput" accept="image/*" capture="environment" onchange="onAnimalPhoto(event)" aria-label="Foto do animal"></div>
+      <button type="button" id="animalPhotoRemove" class="photo-remove" onclick="removeAnimalPhoto()" style="display:none">Remover foto</button>
+    </div>
+    <div class="id-fields">
+      <div class="form-group"><label for="animalNum">Nº do animal <b class="req">*</b></label><input class="form-input" id="animalNum" placeholder="Ex.: 142" autocomplete="off" oninput="updateAnimalHints()"><div class="field-hint" id="numHint"></div></div>
+      <div class="form-group"><label for="animalNome">Nome <b class="req">*</b></label><input class="form-input" id="animalNome" placeholder="Ex.: Mimosa" autocomplete="off"></div>
+    </div>
+  </div>
+  <div class="flex-row">
+    <div class="form-group"><label for="animalBrinco">Brinco / chip</label><input class="form-input" id="animalBrinco" placeholder="Ex.: 076 0001 2345" autocomplete="off"></div>
+    <div class="form-group"><label for="animalRegistro">Registro</label><input class="form-input" id="animalRegistro" placeholder="Ex.: GIR 12345" autocomplete="off"></div>
+  </div>
+  <div class="form-group"><label for="animalLote">Lote <b class="req">*</b></label><select class="form-input" id="animalLote"><option value="">Selecione...</option></select></div>
+</section>
+
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Classificação</div>
+  <div class="form-group"><label>Sexo <b class="req">*</b></label>
+    <div class="seg" id="segSexo"><button type="button" data-v="Fêmea" onclick="setAnimalSexo('Fêmea')">♀ Fêmea</button><button type="button" data-v="Macho" onclick="setAnimalSexo('Macho')">♂ Macho</button></div>
+    <select class="form-input hidden" id="animalSexo" onchange="onSexoChange()"><option value="Fêmea">Fêmea</option><option value="Macho">Macho</option></select>
+  </div>
+  <div class="flex-row">
+    <div class="form-group"><label for="animalCat">Categoria <b class="req">*</b></label><select class="form-input" id="animalCat" onchange="onCatChange()"></select></div>
+    <div class="form-group"><label for="animalSit">Situação</label><select class="form-input" id="animalSit" disabled onchange="onSitChange()"></select></div>
+  </div>
+  <div class="flex-row">
+    <div class="form-group"><label for="animalDataNasc">Nascimento</label><input class="form-input" id="animalDataNasc" type="date" oninput="updateAnimalHints()"><div class="field-hint" id="idadeHint"></div></div>
+    <div class="form-group"><label for="animalRaca">Raça</label><select class="form-input" id="animalRaca"><option value="">Selecione...</option><option>Girolando</option><option>Holandesa</option><option>Jersey</option><option>Jersolando</option><option>Gir</option><option>Guzerá</option><option>Pardo-Suíço</option><option>Ayrshire</option><option>Sindi</option><option>Nelore</option><option>Brahman</option><option>Tabapuã</option><option>Mestiça</option><option>Outra</option></select></div>
+  </div>
+  <div class="flex-row">
+    <div class="form-group"><label for="animalGrauSangue">Grau de sangue</label><input class="form-input" id="animalGrauSangue" list="gsOptions" placeholder="Ex.: 5/8" autocomplete="off"></div>
+    <div class="form-group"><label for="animalPelagem">Pelagem</label><input class="form-input" id="animalPelagem" list="pelagemOptions" placeholder="Ex.: Malhada" autocomplete="off"></div>
+  </div>
+</section>
+
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="19" r="3"/><path d="M6 9v2a3 3 0 003 3h6a3 3 0 003-3V9M12 14v2"/></svg>Origem e genealogia</div>
+  <div class="form-group"><label>Origem</label>
+    <div class="seg" id="segOrigem"><button type="button" data-v="Nascido" onclick="setAnimalOrigem('Nascido')">Nascido na fazenda</button><button type="button" data-v="Comprado" onclick="setAnimalOrigem('Comprado')">Comprado</button></div>
+    <select class="form-input hidden" id="animalOrigem" onchange="onOrigemChange()"><option value="Nascido">Nascido na propriedade</option><option value="Comprado">Comprado</option></select>
+  </div>
+  <div id="paiMaeNascido">
+    <div class="form-group"><label for="animalTipoPrenhez">Concepção</label><select class="form-input" id="animalTipoPrenhez"><option value="Natural">Monta natural</option><option value="Inseminada">Inseminação artificial</option></select></div>
+    <div class="flex-row">
+      <div class="form-group"><label for="animalMaeSelect">Mãe (do rebanho)</label><select class="form-input" id="animalMaeSelect"><option value="">Selecione...</option></select></div>
+      <div class="form-group"><label for="animalPaiSelect">Pai / touro</label><select class="form-input" id="animalPaiSelect"><option value="">Selecione...</option></select></div>
+    </div>
+  </div>
+  <div id="paiMaeComprado" class="hidden">
+    <div class="flex-row">
+      <div class="form-group"><label for="animalNomeMae">Nome da mãe</label><input class="form-input" id="animalNomeMae" placeholder="Se souber" autocomplete="off"></div>
+      <div class="form-group"><label for="animalNomePai">Nome do pai</label><input class="form-input" id="animalNomePai" list="touroOptions" placeholder="Se souber" autocomplete="off"></div>
+    </div>
+    <div class="flex-row">
+      <div class="form-group"><label for="animalDataCompra">Data da compra</label><input class="form-input" id="animalDataCompra" type="date"></div>
+      <div class="form-group"><label for="animalValorCompra">Valor pago (R$)</label><input class="form-input" id="animalValorCompra" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+    </div>
+    <div class="form-group"><label for="animalVendedor">Vendedor / procedência</label><input class="form-input" id="animalVendedor" placeholder="Ex.: Fazenda Boa Vista" autocomplete="off"></div>
+  </div>
+</section>
+
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Produção e reprodução</div>
+  <div class="flex-row">
+    <div class="form-group"><label for="animalPeso">Peso (kg)</label><input class="form-input" id="animalPeso" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ex.: 450"></div>
+    <div class="form-group" id="leiteGroup"><label for="animalLeite">Leite (L/dia)</label><input class="form-input" id="animalLeite" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ex.: 18,5"></div>
+  </div>
+  <div class="form-group" id="partoGroup" style="display:none"><label for="animalUltimoParto">Data do último parto</label><input class="form-input" id="animalUltimoParto" type="date" oninput="updateAnimalHints()"><div class="field-hint" id="delHint"></div></div>
+  <div class="form-group" id="prenhaGroup" style="display:none"><label for="animalPrenhaData">Início da prenhez (data ou dias)</label><div class="flex-row"><input class="form-input" id="animalPrenhaData" type="date" style="flex:1" oninput="updateAnimalHints()"><input class="form-input" id="animalPrenhaDias" type="number" min="0" inputmode="numeric" placeholder="ou dias" style="flex:0.6" oninput="updateAnimalHints()"></div><div class="field-hint" id="prenhaHint"></div></div>
+</section>
+
+<section class="fsec">
+  <div class="fsec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Observações</div>
+  <div class="form-group" style="margin-bottom:0"><textarea class="form-input" id="animalObs" rows="3" placeholder="Temperamento, defeitos, manejo especial..."></textarea></div>
+</section>
+
+<div class="form-actions">
+  <button type="button" class="btn btn-outline" id="btnSaveAnother" onclick="saveAnimalToLote(true)" title="Salva e já abre um novo cadastro">Salvar e próximo</button>
+  <button type="button" class="btn btn-primary" onclick="saveAnimalToLote()">Salvar</button>
 </div>
-<div id="paiMaeComprado" class="hidden">
-  <div class="flex-row"><div class="form-group"><label>Nome da Mãe</label><input class="form-input" id="animalNomeMae" placeholder="Nome da mãe"></div><div class="form-group"><label>Nome do Pai</label><input class="form-input" id="animalNomePai" list="touroOptions" placeholder="Nome do pai"></div></div>
-</div>
-<div class="flex-row"><div class="form-group"><label>Peso (kg)</label><input class="form-input" id="animalPeso" type="number" step="0.1" placeholder="Ex: 450"></div><div class="form-group" id="leiteGroup"><label>Prod. Média Leite (L/dia)</label><input class="form-input" id="animalLeite" type="number" step="0.1" placeholder="Ex: 12.5"></div></div>
-<div class="form-group" id="partoGroup" style="display:none"><label>DEL</label><input class="form-input" id="animalUltimoParto" type="date"></div>
-<div class="form-group" id="prenhaGroup" style="display:none"><label>Início da Prenhez (data ou dias)</label><div class="flex-row"><input class="form-input" id="animalPrenhaData" type="date" style="flex:1"><input class="form-input" id="animalPrenhaDias" type="number" placeholder="Ou dias" style="flex:0.6"></div></div>
-<button class="btn btn-primary mt-8" onclick="saveAnimalToLote()">Salvar</button></div></div>
+</div></div>
+<div class="modal-overlay" id="actionSheet" data-backdrop-close><div class="modal glass sheet"><div class="modal-handle"></div><div class="sheet-head"><div class="sheet-title" id="sheetTitle"></div><div class="sheet-sub" id="sheetSub"></div></div><div id="sheetActions" class="sheet-actions"></div><button type="button" class="btn btn-outline" onclick="closeModal('actionSheet')">Cancelar</button></div></div>
+<datalist id="gsOptions"><option value="PO"><option value="1/2"><option value="3/4"><option value="5/8"><option value="7/8"><option value="15/16"><option value="31/32"><option value="1/4"><option value="3/8"></datalist>
+<datalist id="pelagemOptions"><option value="Preta e branca (malhada)"><option value="Vermelha e branca"><option value="Preta"><option value="Branca"><option value="Vermelha"><option value="Amarela"><option value="Chitada"><option value="Moura"><option value="Gargantilha"><option value="Pintada"></datalist>
 
 <div class="modal-overlay" id="insemAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="insemAnimalModalTitle">Adicionar Inseminação</h3><button class="modal-close" onclick="closeModal('insemAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Planilha</label><select class="form-input" id="insemPlanSelect"><option value="">Selecione a planilha...</option></select></div>
@@ -289,7 +428,7 @@
 <div class="form-group"><label>Observação</label><textarea class="form-input" id="insemObs" placeholder="Observações..."></textarea></div>
 <button class="btn btn-primary mt-8" onclick="saveInsemAnimal()">Salvar</button></div></div>
 
-<div class="modal-overlay" id="helpModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="helpTitle">Ajuda</h3><button class="modal-close" onclick="closeModal('helpModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="helpContent"></div></div></div>
+<div class="modal-overlay" id="helpModal" data-backdrop-close><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="helpTitle">Ajuda</h3><button class="modal-close" onclick="closeModal('helpModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="helpContent"></div></div></div>
 <datalist id="touroOptions"></datalist>
 <div class="modal-overlay" id="baixaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3>Dar baixa no animal</h3><button class="modal-close" onclick="closeModal('baixaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div id="baixaAnimalName" style="font-weight:700;color:var(--text);margin-bottom:14px"></div>
@@ -309,7 +448,7 @@
 <button class="btn btn-primary btn-sm mb-16" style="background:var(--green);color:#fff" onclick="saveTouro()">+ Adicionar touro</button>
 <div id="tourosList"></div>
 </div></div>
-<div class="modal-overlay" id="fichaModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
+<div class="modal-overlay" id="fichaModal" data-backdrop-close><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="fichaTitle">Ficha</h3><button class="modal-close" onclick="closeModal('fichaModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div id="fichaContent"></div></div></div>
 <div class="modal-overlay" id="medAnimalModal"><div class="modal glass"><div class="modal-handle"></div><div class="modal-header"><h3 id="medAnimalModalTitle">Adicionar Medicação</h3><button class="modal-close" onclick="closeModal('medAnimalModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
 <div class="form-group"><label>Modo de Seleção</label>
 <div style="display:flex;gap:6px;margin-bottom:12px">

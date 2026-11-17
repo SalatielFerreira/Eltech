@@ -1,10 +1,8 @@
 // ========== INSEMINAÇÃO ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider } from './ui.js';
-import { dbInsert, dbInsertMany, dbUpdate, dbDelete, getAllAnimals, sortByNum, loteCmp, resolveAid } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, refresh } from './ui.js';
+import { dbInsert, dbInsertMany, dbUpdate, dbDelete, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO } from './data.js';
 import { SIT_OPTIONS } from './constants.js';
-import { renderLotes, renderLoteAnimals } from './lotes.js';
-import { renderAnimaisFolder } from './animais.js';
 
 function eligibleAnimals() {
   return getAllAnimals().filter(a => a.sexo !== 'Macho' && a.cat !== 'Bezerra' && a.sit !== 'Anestro');
@@ -98,14 +96,12 @@ export function renderAnimals() {
 
 export function populateInsemSelect() {
   const sel = document.getElementById('insemAnimalSelect');
-  sel.innerHTML = '<option value="">Selecione o animal...</option>';
-  sortByNum(eligibleAnimals()).forEach(a => { sel.innerHTML += `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)}</option>`; });
+  sel.innerHTML = '<option value="">Selecione o animal...</option>' + sortByNum(eligibleAnimals()).map(a => `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)}</option>`).join('');
 }
 export function populateInsemPlanSelect() {
   const sel = document.getElementById('insemPlanSelect');
   const prev = sel.value;
-  sel.innerHTML = '<option value="">Selecione a planilha...</option>';
-  [...state.db.inseminacao].sort(loteCmp).forEach(p => { sel.innerHTML += `<option value="${p.id}">${esc(p.name)}</option>`; });
+  sel.innerHTML = '<option value="">Selecione a planilha...</option>' + [...state.db.inseminacao].sort(loteCmp).map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
   if (prev) sel.value = prev;
 }
 export function openInsemAnimalDirect() {
@@ -237,7 +233,7 @@ export async function setParecer(sit) {
   if (!p) return;
   const rec = p.animals.find(x => x.id === state.parecerRecId);
   if (!rec) return;
-  const parecerData = new Date().toISOString().split('T')[0];
+  const parecerData = todayISO();
   await safeRun(async () => {
     await dbUpdate('inseminacao_registros', rec.id, { parecer: sit, parecer_data: parecerData });
     rec.parecer = sit;
@@ -255,9 +251,7 @@ export async function setParecer(sit) {
     await Promise.all(animaisAtualizados.map(a => dbUpdate('animais', a.id, { sit: a.sit, prenha_data: a.prenhaData || null })));
     closeModal('parecerModal');
     renderAnimals();
-    renderLotes();
-    renderAnimaisFolder();
-    if (state.currentLoteId) renderLoteAnimals();
+    refresh('rebanho');
     toast(updated ? 'Situação atualizada: ' + sit : 'Parecer salvo (animal não encontrado no rebanho)');
   });
 }

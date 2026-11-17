@@ -70,10 +70,28 @@ export function ageDays(dateStr) {
   if (!dateStr) return '';
   return Math.floor((Date.now() - new Date(dateStr + 'T12:00').getTime()) / 86400000);
 }
-export function getInsemDate(num) {
-  let d = '';
-  state.db.inseminacao.forEach(p => p.animals.forEach(a => { if (a.num === num && a.data > d) d = a.data; }));
-  return d ? new Date(d + 'T12:00').toLocaleDateString('pt-BR') : '';
+// Data de hoje (ou de `date`) no fuso LOCAL, formato AAAA-MM-DD. Não usar
+// toISOString() para isso: ele converte para UTC e, depois das 21h no Brasil,
+// devolveria a data de amanhã.
+export function toLocalISO(date = new Date()) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+export const todayISO = () => toLocalISO(new Date());
+export const fmtDateBR = s => (s ? new Date(s + 'T12:00').toLocaleDateString('pt-BR') : '');
+
+// Índice nº do animal -> data (AAAA-MM-DD) da inseminação mais recente. Montado uma vez
+// por renderização de lista, em vez de varrer todas as planilhas para cada animal.
+export function buildInsemIndex() {
+  const idx = new Map();
+  state.db.inseminacao.forEach(p => p.animals.forEach(a => {
+    if (a.data && (!idx.has(a.num) || a.data > idx.get(a.num))) idx.set(a.num, a.data);
+  }));
+  return idx;
+}
+export function getInsemDate(num, index) {
+  const d = (index || buildInsemIndex()).get(num) || '';
+  return fmtDateBR(d);
 }
 export function resolveAid(num) {
   const a = getAllAnimals().find(x => String(x.num) === String(num));
@@ -100,9 +118,39 @@ function mapAnimalRow(row) {
     grauSangue: row.grau_sangue || '', nomeMae: row.nome_mae || '', nomePai: row.nome_pai || '',
     peso: row.peso ?? '', leite: row.leite ?? '', ultimoParto: row.ultimo_parto || '',
     prenhaData: row.prenha_data || '', photoPath: row.photo_path || '',
+    brinco: row.brinco || '', registro: row.registro || '', pelagem: row.pelagem || '', obs: row.obs || '',
+    dataCompra: row.data_compra || '', valorCompra: row.valor_compra ?? '', vendedor: row.vendedor || '',
     pesagens: [], leiteHist: [],
   };
 }
+
+// ---------- Gravação de animal tolerante a banco ainda não atualizado ----------
+// As colunas abaixo foram adicionadas na v4.2.0 (supabase/migrations/20261117_animais_campos_extras.sql).
+// Se o banco ainda não recebeu a migração, o Supabase recusa a gravação por coluna
+// inexistente; nesse caso gravamos o animal sem esses campos (o cadastro continua
+// funcionando) e avisamos quem chamou via `extrasIgnored`.
+export const ANIMAL_EXTRA_COLS = ['brinco', 'registro', 'pelagem', 'obs', 'data_compra', 'valor_compra', 'vendedor'];
+function isMissingColumnError(err) {
+  return !!err && (err.code === 'PGRST204' || err.code === '42703' || /column/i.test(err.message || '') && /(schema cache|does not exist)/i.test(err.message || ''));
+}
+export async function dbWriteAnimal(id, row) {
+  try {
+    const data = id ? await dbUpdate('animais', id, row) : await dbInsert('animais', row);
+    return { data, extrasIgnored: false };
+  } catch (err) {
+    if (!isMissingColumnError(err)) throw err;
+    const slim = { ...row };
+    ANIMAL_EXTRA_COLS.forEach(c => delete slim[c]);
+    const data = id ? await dbUpdate('animais', id, slim) : await dbInsert('animais', slim);
+    return { data, extrasIgnored: true };
+  }
+}
+
+const groupBy = (rows, key) => {
+  const m = new Map();
+  rows.forEach(r => { const k = r[key]; if (!m.has(k)) m.set(k, []); m.get(k).push(r); });
+  return m;
+};
 function mapInsemRow(row) {
   return {
     id: row.id, aid: row.animal_id || '', num: row.num, nome: row.nome, data: row.data || '',
@@ -141,11 +189,20 @@ export async function loadAllData() {
     if (res.error) throw res.error;
   }
 
+  // Agrupa as tabelas-filhas uma vez (Map) em vez de filtrar a tabela inteira para cada registro.
+  const pesagensBy = groupBy(pesagensRes.data, 'animal_id');
+  const leiteBy = groupBy(leiteRes.data, 'animal_id');
+  const insemBy = groupBy(insemRegsRes.data, 'planilha_id');
+  const medMedsBy = groupBy(medMedsRes.data, 'medicacao_id');
+  const medAnimaisBy = groupBy(medAnimaisRes.data, 'medicacao_id');
+  const aliDietasBy = groupBy(aliDietasRes.data, 'alimentacao_id');
+  const aliAnimaisBy = groupBy(aliAnimaisRes.data, 'alimentacao_id');
+
   const animaisByLote = {};
   animaisRes.data.forEach(row => {
     const animal = mapAnimalRow(row);
-    animal.pesagens = pesagensRes.data.filter(p => p.animal_id === row.id).map(p => ({ peso: p.peso, data: p.data }));
-    animal.leiteHist = leiteRes.data.filter(l => l.animal_id === row.id).map(l => ({ leite: l.leite, data: l.data }));
+    animal.pesagens = (pesagensBy.get(row.id) || []).map(p => ({ peso: p.peso, data: p.data }));
+    animal.leiteHist = (leiteBy.get(row.id) || []).map(l => ({ leite: l.leite, data: l.data }));
     (animaisByLote[row.lote_id] ||= []).push(animal);
   });
 
@@ -156,21 +213,21 @@ export async function loadAllData() {
 
   const inseminacao = planilhasRes.data.map(p => ({
     id: p.id, name: p.name, createdAt: new Date(p.created_at).getTime(),
-    animals: insemRegsRes.data.filter(r => r.planilha_id === p.id).map(mapInsemRow),
+    animals: (insemBy.get(p.id) || []).map(mapInsemRow),
   }));
 
   const medDirect = medicacoesRes.data.map(m => ({
     id: m.id, dataIni: m.data_ini || '', dataFim: m.data_fim || '', tipo: m.tipo || '',
     carenciaLeite: m.carencia_leite ?? '', carenciaCarne: m.carencia_carne ?? '',
-    medicamentos: medMedsRes.data.filter(x => x.medicacao_id === m.id).map(x => ({ nome: x.nome, dose: x.dose || '' })),
-    animais: medAnimaisRes.data.filter(x => x.medicacao_id === m.id).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
+    medicamentos: (medMedsBy.get(m.id) || []).map(x => ({ nome: x.nome, dose: x.dose || '' })),
+    animais: (medAnimaisBy.get(m.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
   }));
 
   const aliDirect = alimentacoesRes.data.map(a => ({
     id: a.id, createdAt: new Date(a.created_at).getTime(), nomeDieta: a.nome_dieta || '',
     numAnimais: a.num_animais || 0, custoTotal: a.custo_total || 0,
-    dietas: aliDietasRes.data.filter(x => x.alimentacao_id === a.id).map(x => ({ tipo: x.tipo, valorKg: x.valor_kg ?? '', kg: x.kg ?? '' })),
-    animais: aliAnimaisRes.data.filter(x => x.alimentacao_id === a.id).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
+    dietas: (aliDietasBy.get(a.id) || []).map(x => ({ tipo: x.tipo, valorKg: x.valor_kg ?? '', kg: x.kg ?? '' })),
+    animais: (aliAnimaisBy.get(a.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
   }));
 
   const touros = tourosRes.data.map(t => ({ id: t.id, nome: t.nome, raca: t.raca || '', grauSangue: t.grau_sangue || '', registro: t.registro || '' }));

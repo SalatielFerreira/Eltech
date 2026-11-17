@@ -14,13 +14,11 @@ export function setMedMode(mode) {
 }
 export function populateMedLoteSelect() {
   const sel = document.getElementById('medLoteSelect');
-  sel.innerHTML = '<option value="">Selecione o lote...</option>';
-  [...state.db.lotes].sort(loteCmp).forEach(l => { sel.innerHTML += `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`; });
+  sel.innerHTML = '<option value="">Selecione o lote...</option>' + [...state.db.lotes].sort(loteCmp).map(l => `<option value="${l.id}">${esc(l.name)} (${l.animals.length})</option>`).join('');
 }
 export function populateMedSelect() {
   const sel = document.getElementById('medAnimalSelect');
-  sel.innerHTML = '<option value="">Selecione o animal...</option>';
-  sortByNum(getAllAnimals().slice()).forEach(a => { sel.innerHTML += `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`; });
+  sel.innerHTML = '<option value="">Selecione o animal...</option>' + sortByNum(getAllAnimals().slice()).map(a => `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName)})</option>`).join('');
 }
 export function loadMedLoteAnimals() {
   const lid = document.getElementById('medLoteSelect').value;
@@ -52,8 +50,8 @@ export function renderMedIndivList() {
 export function removeMedIndivAnimal(i) { state.tempMedAnimals.splice(i, 1); renderMedIndivList(); }
 
 export function addMedRow() {
-  document.getElementById('medMedicamentos').innerHTML +=
-    `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><input class="form-input medDoseInput" placeholder="Dose"></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button></div>`;
+  document.getElementById('medMedicamentos').insertAdjacentHTML('beforeend',
+    `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><input class="form-input medDoseInput" placeholder="Dose"></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button></div>`);
 }
 function getMedRows() {
   const rows = [];
@@ -66,10 +64,7 @@ function getMedRows() {
 }
 function setMedRows(meds) {
   const container = document.getElementById('medMedicamentos');
-  container.innerHTML = '';
-  (meds || []).forEach((m, i) => {
-    container.innerHTML += `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2">${i === 0 ? '<label style="font-size:.65rem">Medicamento</label>' : ''}<input class="form-input medNomeInput" placeholder="Nome" value="${esc(m.nome || '')}"></div><div class="form-group" style="margin-bottom:0;flex:1">${i === 0 ? '<label style="font-size:.65rem">Dosagem</label>' : ''}<input class="form-input medDoseInput" placeholder="Dose" value="${esc(m.dose || '')}"></div>${i > 0 ? '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button>' : ''}</div>`;
-  });
+  container.innerHTML = (meds || []).map((m, i) => `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2">${i === 0 ? '<label style="font-size:.65rem">Medicamento</label>' : ''}<input class="form-input medNomeInput" placeholder="Nome" value="${esc(m.nome || '')}"></div><div class="form-group" style="margin-bottom:0;flex:1">${i === 0 ? '<label style="font-size:.65rem">Dosagem</label>' : ''}<input class="form-input medDoseInput" placeholder="Dose" value="${esc(m.dose || '')}"></div>${i > 0 ? '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;align-self:flex-end;margin-bottom:4px;font-size:1.2rem">✕</button>' : ''}</div>`).join('');
   if (!meds || !meds.length) container.innerHTML = `<div class="flex-row med-row" style="margin-bottom:8px"><div class="form-group" style="margin-bottom:0;flex:2"><label style="font-size:.65rem">Medicamento</label><input class="form-input medNomeInput" placeholder="Nome"></div><div class="form-group" style="margin-bottom:0;flex:1"><label style="font-size:.65rem">Dosagem</label><input class="form-input medDoseInput" placeholder="Dose"></div></div>`;
 }
 

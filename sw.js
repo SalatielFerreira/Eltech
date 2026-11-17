@@ -13,7 +13,7 @@
    aviso "Nova versão disponível" para quem já tem o app aberto.
    (Mantenha igual em main.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '4.1.2';
+const VERSION = '4.2.0';
 const CACHE = 'farm-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.
@@ -48,7 +48,7 @@ const ASSETS = [
   './assets/js/modules/help.js',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
-  './assets/img/fundo.png',
+  './assets/img/fundo.jpg',
   'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap',
 ];
 

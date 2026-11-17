@@ -22,7 +22,7 @@ import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
 
-const APP_VERSION = '4.1.2'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = '4.2.0'; // sincronize com sw.js (VERSION) e version.json
 
 // Versão exibida no rodapé de Configurações — único lugar do app onde aparece "Eltech" (a empresa).
 const versionEl = document.getElementById('appVersion');
@@ -44,17 +44,21 @@ Object.assign(window, {
   saveLote: lotes.saveLote, editLoteFromCard: lotes.editLoteFromCard, delLote: lotes.delLote,
   openLoteDetail: lotes.openLoteDetail, backToLotes: lotes.backToLotes, toggleLoteFilter: lotes.toggleLoteFilter,
   renderLoteAnimals: lotes.renderLoteAnimals, renderLotes: lotes.renderLotes, moveLote: lotes.moveLote,
+  openLoteActions: lotes.openLoteActions, clearLoteFilters: lotes.clearLoteFilters,
   // animais.js
   onSexoChange: animais.onSexoChange, onCatChange: animais.onCatChange, onSitChange: animais.onSitChange,
   onOrigemChange: animais.onOrigemChange, saveAnimalToLote: animais.saveAnimalToLote,
   openAnimalForLote: animais.openAnimalForLote, editAnimalInLote: animais.editAnimalInLote,
   delAnimalFromLote: animais.delAnimalFromLote, renderAnimaisFolder: animais.renderAnimaisFolder,
-  openFicha: animais.openFicha,
+  openFicha: animais.openFicha, openNewAnimal: animais.openNewAnimal, openAnimalActions: animais.openAnimalActions,
+  setAnimalSexo: animais.setAnimalSexo, setAnimalOrigem: animais.setAnimalOrigem, updateAnimalHints: animais.updateAnimalHints,
+  useSuggestedNum: animais.useSuggestedNum, clearAnimalFilters: animais.clearAnimalFilters,
   // rebanho.js
   openRebanhoView: rebanho.openRebanhoView, backToRebanhoHome: rebanho.backToRebanhoHome,
   // baixas.js
   openBaixa: baixas.openBaixa, setBaixaTipo: baixas.setBaixaTipo, confirmBaixa: baixas.confirmBaixa,
   renderBaixas: baixas.renderBaixas, restaurarBaixa: baixas.restaurarBaixa, delBaixa: baixas.delBaixa,
+  openBaixaActions: baixas.openBaixaActions, clearBaixaFilters: baixas.clearBaixaFilters,
   // touros.js
   openTouros: touros.openTouros, saveTouro: touros.saveTouro, editTouro: touros.editTouro, delTouro: touros.delTouro,
   // inseminacao.js

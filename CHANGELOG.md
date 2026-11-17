@@ -2,6 +2,73 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.2.0] — 2026-11-17
+
+### Desempenho (telas e janelas mais leves)
+
+- **Janelas abrem na hora:** as listas de seleção (animais, lotes, mãe/pai) eram montadas item
+  por item, refazendo a lista inteira a cada animal. Com 400 animais num celular simulado
+  (CPU 4x mais lenta), abrir **Adicionar Animal** caiu de **3,2 s → 0,1 s** e **Medicação** de
+  **4,5 s → 0,1 s**.
+- **Troca de páginas:** entrar no Rebanho caiu de **0,67 s → 0,03 s**; o app só desenha a
+  lista que está aberta (antes desenhava as três, mesmo escondidas).
+- **Listas longas** aparecem imediatamente (primeiros cartões na hora, o resto em partes) e
+  usam `content-visibility` para não pintar o que está fora da tela.
+- **Fotos das listas** são buscadas numa única chamada ao Storage (antes era uma por animal).
+- **Visual mais leve para o celular:** removido o desfoque (`backdrop-filter`) de cartões,
+  barras e janelas — era o efeito mais caro durante a rolagem; os quadros ficaram um pouco
+  mais opacos para manter a leitura.
+- **Imagem de fundo** trocada de PNG 4K (7,7 MB) para JPEG otimizado (255 KB).
+- Carregamento inicial dos dados reorganizado (agrupamento por tabela em vez de varreduras
+  repetidas).
+
+### Rebanho redesenhado
+
+- **Tela inicial:** resumo (fêmeas, machos, em lactação, prenhas, leite/dia), atalhos com
+  descrição e **composição do rebanho por categoria**.
+- **Cartões de animal** mais limpos: nº, nome, sexo, categoria, situação colorida (prenha,
+  vazia, cio, anestro), lote, produção e dados reprodutivos (DEL, dias de prenhez, parto
+  previsto, última inseminação).
+- **Menu de ações (⋮)** no lugar dos três botões coloridos: ver ficha, editar, dar baixa e
+  excluir. O mesmo padrão em lotes (abrir, adicionar animal, renomear, excluir) e baixas
+  (restaurar, excluir).
+- **Filtros** com contador de filtros ativos, filtro por **lote**, todas as situações
+  (inclui Vazia Cloe, Vazia Clod e Cio) e **ordenação** (nº, nome, maior produção, idade).
+  Busca também por **brinco**.
+- **Lotes:** número de fêmeas/machos, animais em lactação, leite/dia e prenhas em cada lote.
+- **Baixas:** total de vendas, valor vendido e mortes no topo.
+- Cabeçalhos com botão voltar compacto e contadores; em telas largas a lista vira duas colunas.
+
+### Cadastro de animal mais completo
+
+- Formulário em seções: **Identificação**, **Classificação**, **Origem e genealogia**,
+  **Produção e reprodução** e **Observações**.
+- **Campos novos:** brinco/chip, registro genealógico, pelagem, observações e, para animais
+  comprados, data da compra, valor pago e vendedor/procedência.
+- **Sugestão do próximo nº livre** e aviso imediato de **nº já usado** (agora em todo o
+  rebanho, não só no lote).
+- **Cálculos automáticos:** idade, DEL (dias em lactação) e dias de prenhez com **parto previsto**.
+- **Validação antes de salvar** com o campo destacado: datas futuras, parto antes do
+  nascimento, prenhez acima de 300 dias, peso/leite fora da faixa, animal como a própria mãe.
+- **Salvar e próximo:** cadastro em sequência mantendo lote, sexo, categoria, origem e raça.
+- **Ficha do animal** com os dados novos e botões **Editar** e **Dar baixa**.
+- Relatórios: novos campos Brinco, Registro, Pelagem e Obs.
+
+### Correções
+
+- Datas registradas pelo app (pesagem, leite, parecer, baixa) usavam o horário UTC e, depois
+  das 21h, gravavam a data de amanhã. Agora usam a data local.
+- Editar um animal sem mudar o peso/leite criava uma pesagem/registro de leite repetido.
+- Ao cadastrar um animal nascido na fazenda, a mãe só é atualizada (último parto, lactação)
+  se o nascimento for recente — cadastrar um animal antigo não altera mais a mãe.
+- As setas de ordenar lotes usavam uma ordem diferente da exibida.
+
+### ⚠️ Atualização do banco (uma vez)
+
+Para gravar os campos novos, rode `supabase/migrations/20261117_animais_campos_extras.sql`
+no SQL Editor do Supabase. Até lá o app continua funcionando e salvando os animais, só sem
+os campos novos (e mostra um aviso).
+
 ## [4.1.2] — 2026-11-17
 
 ### App renomeado para FARM

@@ -17,7 +17,7 @@ export function drawPie(canvasId, legendId, data) {
     return;
   }
   let start = -Math.PI / 2;
-  leg.innerHTML = '';
+  const legend = [];
   keys.forEach((k, i) => {
     const angle = (data[k] / total) * Math.PI * 2;
     const color = COLORS[i % COLORS.length];
@@ -34,8 +34,9 @@ export function drawPie(canvasId, legendId, data) {
       ctx.fillText(data[k], lx, ly);
     }
     start += angle;
-    leg.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div>${esc(k)} (${data[k]})</div>`;
+    legend.push(`<div class="legend-item"><div class="legend-dot" style="background:${color}"></div>${esc(k)} (${data[k]})</div>`);
   });
+  leg.innerHTML = legend.join('');
   ctx.fillStyle = '#fff'; ctx.font = '700 22px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(total, cx, cy - 6);
   ctx.fillStyle = 'rgba(195,249,221,0.5)'; ctx.font = '500 10px Sora';

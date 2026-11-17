@@ -92,9 +92,24 @@ create table if not exists public.animais (
   ultimo_parto  date,
   prenha_data   date,
   photo_path    text,
+  brinco        text,
+  registro      text,
+  pelagem       text,
+  obs           text,
+  data_compra   date,
+  valor_compra  numeric,
+  vendedor      text,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
+-- Colunas adicionadas na v4.2.0 (para bancos criados antes dela).
+alter table public.animais add column if not exists brinco        text;
+alter table public.animais add column if not exists registro      text;
+alter table public.animais add column if not exists pelagem       text;
+alter table public.animais add column if not exists obs           text;
+alter table public.animais add column if not exists data_compra   date;
+alter table public.animais add column if not exists valor_compra  numeric;
+alter table public.animais add column if not exists vendedor      text;
 create index if not exists idx_animais_owner on public.animais(owner_id);
 create index if not exists idx_animais_lote  on public.animais(lote_id);
 

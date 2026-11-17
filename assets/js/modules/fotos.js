@@ -95,13 +95,32 @@ export async function deleteAnimalPhoto(animalId) {
 export function getAnimalPhotoUrl(animal) {
   return signedUrl('animal-photos', animal?.photoPath);
 }
-export function hydrateThumbs() {
-  document.querySelectorAll('.ani-thumb[data-aid]:not([data-done])').forEach(async el => {
+// Preenche as miniaturas de foto das listas. Os links assinados que ainda não estão em
+// cache são pedidos ao Storage numa ÚNICA chamada (createSignedUrls), em vez de uma
+// chamada por animal — com listas grandes isso evita dezenas/centenas de requisições.
+export async function hydrateThumbs() {
+  const els = [...document.querySelectorAll('.ani-thumb[data-aid]:not([data-done])')];
+  if (!els.length) return;
+  const byId = new Map();
+  state.db.lotes.forEach(l => l.animals.forEach(a => byId.set(a.id, a)));
+  const apply = (el, url) => { if (url) { el.textContent = ''; el.style.backgroundImage = `url('${url}')`; el.classList.add('has-photo'); } };
+  const pending = new Map(); // path -> [elementos]
+  els.forEach(el => {
     el.setAttribute('data-done', '1');
-    const aid = el.getAttribute('data-aid');
-    const animal = state.db.lotes.flatMap(l => l.animals).find(a => a.id === aid);
-    const url = await getAnimalPhotoUrl(animal);
-    if (url) { el.textContent = ''; el.style.backgroundImage = `url('${url}')`; }
+    const path = byId.get(el.getAttribute('data-aid'))?.photoPath;
+    if (!path) return;
+    const cached = state.photoUrlCache.get('animal-photos:' + path);
+    if (cached) return apply(el, cached);
+    if (!pending.has(path)) pending.set(path, []);
+    pending.get(path).push(el);
+  });
+  if (!pending.size) return;
+  const { data, error } = await supabase.storage.from('animal-photos').createSignedUrls([...pending.keys()], SIGNED_URL_TTL);
+  if (error || !data) return;
+  data.forEach(r => {
+    if (!r.signedUrl) return;
+    state.photoUrlCache.set('animal-photos:' + r.path, r.signedUrl);
+    (pending.get(r.path) || []).forEach(el => apply(el, r.signedUrl));
   });
 }
 
@@ -112,7 +131,7 @@ export function setAnimalPhotoUI(url) {
   const rm = document.getElementById('animalPhotoRemove');
   if (!img) return;
   if (url) { img.src = url; img.style.display = 'block'; if (ph) ph.style.display = 'none'; if (rm) rm.style.display = 'inline-block'; }
-  else { img.removeAttribute('src'); img.style.display = 'none'; if (ph) ph.style.display = 'block'; if (rm) rm.style.display = 'none'; }
+  else { img.removeAttribute('src'); img.style.display = 'none'; if (ph) ph.style.display = ''; if (rm) rm.style.display = 'none'; }
 }
 export function resetAnimalPhoto() {
   state.tempAnimalPhoto = undefined;

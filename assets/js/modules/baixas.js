@@ -1,14 +1,18 @@
 // ========== BAIXAS (venda / morte) ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline } from './ui.js';
-import { dbInsert, dbDelete, getAnimalById } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, refresh, openActionSheet } from './ui.js';
+import { dbInsert, dbDelete, getAnimalById, todayISO, fmtDateBR, dbWriteAnimal } from './data.js';
+import { ICON_DOTS, emptyStateHtml } from './animalRow.js';
+import { updateFilterBadge } from './lotes.js';
+
+const brl = v => 'R$ ' + (parseFloat(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function openBaixa(aid) {
   const a = getAnimalById(aid);
   if (!a) return;
   state.baixaAid = aid;
   document.getElementById('baixaAnimalName').textContent = '#' + a.num + ' ' + a.nome;
-  document.getElementById('baixaData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('baixaData').value = todayISO();
   document.getElementById('baixaValor').value = '';
   document.getElementById('baixaObs').value = '';
   setBaixaTipo('venda');
@@ -27,14 +31,15 @@ export async function confirmBaixa() {
   if (!state.baixaAid || !state.baixaTipo) return toast('Escolha Venda ou Morte', 'error');
   const data = document.getElementById('baixaData').value;
   if (!data) return toast('Informe a data', 'error');
+  if (data > todayISO()) return toast('A data da baixa não pode ser futura', 'error');
   const valor = state.baixaTipo === 'venda' ? (document.getElementById('baixaValor').value || '') : '';
   const obs = document.getElementById('baixaObs').value.trim();
 
   await safeRun(async () => {
-    let animal = null, loteName = '';
+    let animal = null, loteName = '', lote = null;
     state.db.lotes.forEach(l => {
-      const idx = l.animals.findIndex(x => x.id === state.baixaAid);
-      if (idx !== -1) { animal = l.animals.splice(idx, 1)[0]; loteName = l.name; }
+      const f = l.animals.find(x => x.id === state.baixaAid);
+      if (f) { animal = f; loteName = l.name; lote = l; }
     });
     if (!animal) throw new Error('Animal não encontrado');
 
@@ -45,6 +50,8 @@ export async function confirmBaixa() {
     });
     // Remove o animal de verdade (cascata cuida de pesagens/leiteHist e desvincula insem/med/ali).
     await dbDelete('animais', animal.id);
+    // Só tira da memória depois que o banco confirmou (se falhar no meio, a tela não mente).
+    lote.animals = lote.animals.filter(x => x.id !== animal.id);
 
     state.db.baixas.unshift({
       ...animal, baixaRowId: row.id,
@@ -53,36 +60,68 @@ export async function confirmBaixa() {
     state.baixaAid = null;
     state.baixaTipo = null;
     closeModal('baixaModal');
-    import('./rebanho.js').then(m => m.renderRebanho());
+    closeModal('fichaModal');
+    refresh('rebanho');
   }, 'Baixa registrada!');
+}
+
+export function clearBaixaFilters() {
+  ['fBaixaTipo', 'fBaixaSexo', 'fBaixaCat'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderBaixas();
 }
 
 export function renderBaixas() {
   const c = document.getElementById('baixasList');
-  const cnt = document.getElementById('cntBaixas');
   const list = state.db.baixas || [];
-  if (cnt) cnt.textContent = list.length;
   if (!c) return;
+  const vendas = list.filter(b => b.baixa?.tipo === 'venda');
+  const mortes = list.length - vendas.length;
+  const totalVendas = vendas.reduce((s, b) => s + (parseFloat(b.baixa?.valor) || 0), 0);
+  const sub = document.getElementById('baixasSub');
+  if (sub) sub.textContent = `${list.length} registro(s)`;
+  const sum = document.getElementById('baixaSummary');
+  if (sum) sum.innerHTML = list.length ? `<div class="stat-chip"><b>${vendas.length}</b><span>Vendas</span></div><div class="stat-chip"><b>${brl(totalVendas)}</b><span>Total vendido</span></div><div class="stat-chip stat-chip-bad"><b>${mortes}</b><span>Mortes</span></div>` : '';
+
   const q = (document.getElementById('searchBaixas')?.value || '').toLowerCase().trim();
   const tf = document.getElementById('fBaixaTipo')?.value || '';
   const fs = document.getElementById('fBaixaSexo')?.value || '';
   const fc = document.getElementById('fBaixaCat')?.value || '';
-  let items = list.filter(b => {
+  updateFilterBadge('btnFilterBaixas', ['fBaixaTipo', 'fBaixaSexo', 'fBaixaCat']);
+  const items = list.filter(b => {
     if (q && !((b.num || '').toLowerCase().includes(q) || (b.nome || '').toLowerCase().includes(q))) return false;
     if (tf && b.baixa?.tipo !== tf) return false;
     if (fs && b.sexo !== fs) return false;
     if (fc && b.cat !== fc) return false;
     return true;
-  });
-  items.sort((x, y) => (y.baixa?.at || 0) - (x.baixa?.at || 0));
-  if (!items.length) { c.innerHTML = '<div class="empty-state" style="padding:24px"><p>Nenhuma baixa registrada.</p></div>'; return; }
+  }).sort((x, y) => (y.baixa?.data || '').localeCompare(x.baixa?.data || '') || (y.baixa?.at || 0) - (x.baixa?.at || 0));
+  if (!items.length) { c.innerHTML = emptyStateHtml(list.length ? 'Nenhuma baixa encontrada com esses filtros.' : 'Nenhuma baixa registrada.'); return; }
   c.innerHTML = items.map(b => {
     const bx = b.baixa || {};
-    const fmt = bx.data ? new Date(bx.data + 'T12:00').toLocaleDateString('pt-BR') : '';
-    const tipo = bx.tipo === 'venda' ? '💰 Venda' : '⚰️ Morte';
-    const extra = [fmt, (bx.tipo === 'venda' && bx.valor) ? ('R$ ' + esc(bx.valor)) : '', bx.loteName ? ('Lote: ' + esc(bx.loteName)) : ''].filter(Boolean).join(' · ');
-    return `<div class="animal-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div class="animal-info"><div><span class="num">#${esc(b.num)}</span><span class="name-text">${esc(b.nome)}</span></div><div class="badges" style="margin-top:4px"><span class="badge ${bx.tipo === 'venda' ? 'badge-cat' : 'badge-sit'}">${tipo}</span></div>${extra ? ('<div class="detail">' + extra + '</div>') : ''}${bx.obs ? ('<div class="detail" style="font-style:italic">' + esc(bx.obs) + '</div>') : ''}</div><div class="animal-actions"><button class="edit-btn" style="background:var(--green);color:#fff" onclick="restaurarBaixa('${b.baixaRowId}')" title="Restaurar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v6h6"/><path d="M3.5 9a9 9 0 11-.5 5"/></svg></button><button class="del-btn" onclick="delBaixa('${b.baixaRowId}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></div></div>`;
+    const venda = bx.tipo === 'venda';
+    const meta = [fmtDateBR(bx.data), venda && bx.valor ? brl(bx.valor) : '', bx.loteName ? 'Lote ' + esc(bx.loteName) : ''].filter(Boolean).join(' · ');
+    return `<div class="baixa-card ${venda ? 'is-venda' : 'is-morte'}">
+  <div class="baixa-ico">${venda ? '💰' : '✝'}</div>
+  <div class="ani-main">
+    <div class="ani-top"><span class="ani-num">#${esc(b.num)}</span><span class="ani-name">${esc(b.nome)}</span></div>
+    <div class="ani-tags"><span class="tag ${venda ? 'tag-venda' : 'tag-bad'}">${venda ? 'Venda' : 'Morte'}</span>${b.cat ? `<span class="tag">${esc(b.cat)}</span>` : ''}</div>
+    ${meta ? `<div class="ani-meta">${meta}</div>` : ''}${bx.obs ? `<div class="ani-meta ani-obs">“${esc(bx.obs)}”</div>` : ''}
+  </div>
+  <button class="ani-more" onclick="openBaixaActions('${b.baixaRowId}')" aria-label="Ações da baixa">${ICON_DOTS}</button>
+</div>`;
   }).join('');
+}
+
+export function openBaixaActions(baixaRowId) {
+  const b = (state.db.baixas || []).find(x => x.baixaRowId === baixaRowId);
+  if (!b) return;
+  openActionSheet({
+    title: `#${b.num} ${b.nome}`,
+    sub: (b.baixa?.tipo === 'venda' ? 'Venda' : 'Morte') + (b.baixa?.data ? ' em ' + fmtDateBR(b.baixa.data) : ''),
+    actions: [
+      { label: 'Restaurar para o rebanho', icon: '↩️', fn: () => restaurarBaixa(baixaRowId) },
+      { label: 'Excluir registro de baixa', icon: '🗑️', tone: 'danger', fn: () => delBaixa(baixaRowId) },
+    ],
+  });
 }
 
 export async function restaurarBaixa(baixaRowId) {
@@ -98,27 +137,29 @@ export async function restaurarBaixa(baixaRowId) {
       state.db.lotes.push(lote);
     }
     const { baixaRowId: _drop, baixa: _drop2, ...animalData } = b;
-    const insertRow = await dbInsert('animais', {
+    const { data: insertRow } = await dbWriteAnimal(null, {
       lote_id: lote.id, num: animalData.num, nome: animalData.nome, origem: animalData.origem || null,
       tipo_prenhez: animalData.tipoPrenhez || null, data_nasc: animalData.dataNasc || null, sexo: animalData.sexo,
       cat: animalData.cat, sit: animalData.sit || null, raca: animalData.raca || null, grau_sangue: animalData.grauSangue || null,
       nome_mae: animalData.nomeMae || null, nome_pai: animalData.nomePai || null, peso: animalData.peso || null,
       leite: animalData.leite || null, ultimo_parto: animalData.ultimoParto || null, prenha_data: animalData.prenhaData || null,
       photo_path: animalData.photoPath || null,
+      brinco: animalData.brinco || null, registro: animalData.registro || null, pelagem: animalData.pelagem || null, obs: animalData.obs || null,
+      data_compra: animalData.dataCompra || null, valor_compra: animalData.valorCompra || null, vendedor: animalData.vendedor || null,
     });
     lote.animals.push({ ...animalData, id: insertRow.id, pesagens: animalData.pesagens || [], leiteHist: animalData.leiteHist || [] });
     await dbDelete('baixas', baixaRowId);
     state.db.baixas = state.db.baixas.filter(x => x.baixaRowId !== baixaRowId);
-    import('./rebanho.js').then(m => m.renderRebanho());
+    refresh('rebanho');
   }, 'Animal restaurado!');
 }
 
 export async function delBaixa(baixaRowId) {
-  const ok = await showConfirm('Excluir esta baixa definitivamente?', '🗑️');
+  const ok = await showConfirm('Excluir este registro de baixa definitivamente?', '🗑️');
   if (!ok) return;
   await safeRun(async () => {
     await dbDelete('baixas', baixaRowId);
     state.db.baixas = (state.db.baixas || []).filter(x => x.baixaRowId !== baixaRowId);
-    renderBaixas();
+    refresh('rebanho');
   }, 'Baixa excluída');
 }

@@ -148,9 +148,71 @@ export function filterAnimalSelect(searchId, selectId, type) {
   const prev = sel.value;
   let animals = animalSelectProviders[type]?.() || [];
   if (q) animals = animals.filter(a => (a.num || '').toLowerCase().includes(q) || (a.nome || '').toLowerCase().includes(q));
-  sel.innerHTML = '<option value="">Selecione...</option>';
-  animals.forEach(a => {
-    sel.innerHTML += `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName || '')})</option>`;
-  });
+  sel.innerHTML = '<option value="">Selecione...</option>' + animals.map(a =>
+    `<option value="${esc(a.num)}|${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)} (${esc(a.loteName || '')})</option>`).join('');
   if (prev) sel.value = prev;
 }
+
+// ---------- Desempenho: montar <option>s de uma vez só ----------
+// (concatenar `innerHTML +=` dentro de um loop refaz o <select> inteiro a cada item —
+// com centenas de animais isso travava a abertura das janelas por segundos).
+export function setOptions(sel, placeholder, items) {
+  if (typeof sel === 'string') sel = document.getElementById(sel);
+  if (!sel) return;
+  sel.innerHTML = (placeholder != null ? `<option value="">${esc(placeholder)}</option>` : '') +
+    items.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');
+}
+
+// ---------- Desempenho: lista longa renderizada em partes ----------
+// Desenha os primeiros itens na hora (a tela aparece imediatamente) e o resto em lotes
+// a cada quadro de animação. Se a lista for re-renderizada (ex.: digitando na busca),
+// o trabalho pendente da renderização anterior é descartado.
+const listTokens = new WeakMap();
+export function renderListChunked(container, items, rowFn, { first = 20, chunk = 24, after } = {}) {
+  if (!container) return;
+  const token = {};
+  listTokens.set(container, token);
+  container.innerHTML = items.slice(0, first).map(rowFn).join('');
+  after?.();
+  let i = first;
+  const step = () => {
+    if (listTokens.get(container) !== token || i >= items.length) return;
+    container.insertAdjacentHTML('beforeend', items.slice(i, i + chunk).map(rowFn).join(''));
+    i += chunk;
+    after?.();
+    requestAnimationFrame(step);
+  };
+  if (i < items.length) requestAnimationFrame(step);
+}
+
+// ---------- Atualização centralizada de telas ----------
+// Módulos que alteram dados chamam refresh('rebanho') em vez de redesenhar todas as
+// listas (inclusive as escondidas); quem se registrou decide o que está visível.
+const refreshers = {};
+export function registerRefresher(name, fn) { refreshers[name] = fn; }
+export function refresh(name) { refreshers[name]?.(); }
+
+// ---------- Menu de ações (action sheet) ----------
+// openActionSheet({ title, sub, actions: [{ label, icon, tone: 'danger'|'info'|..., fn }] })
+export function openActionSheet({ title, sub = '', actions }) {
+  document.getElementById('sheetTitle').textContent = title || '';
+  document.getElementById('sheetSub').textContent = sub;
+  const box = document.getElementById('sheetActions');
+  box.innerHTML = actions.map((a, i) =>
+    `<button type="button" class="sheet-btn${a.tone ? ' sheet-' + a.tone : ''}" data-i="${i}"><span class="sheet-ico">${a.icon || ''}</span><span>${esc(a.label)}</span></button>`).join('');
+  box.querySelectorAll('.sheet-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = actions[+btn.dataset.i];
+      closeModal('actionSheet');
+      act?.fn?.();
+    });
+  });
+  openModal('actionSheet');
+}
+
+// Fecha ao tocar fora apenas nas janelas marcadas com data-backdrop-close (menus e fichas
+// de consulta). Formulários não fecham por toque acidental fora, para não perder o que foi digitado.
+document.addEventListener('click', e => {
+  const ov = e.target;
+  if (ov.classList?.contains('modal-overlay') && ov.classList.contains('show') && ov.hasAttribute('data-backdrop-close')) closeModal(ov.id);
+});

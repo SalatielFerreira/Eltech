@@ -24,7 +24,8 @@ FARM/
 ├── scripts/
 │   └── generate-config.js       → Lê as Environment Variables da Vercel e gera config.js
 ├── supabase/
-│   └── schema.sql                → Schema completo do banco (tabelas, RLS, buckets de fotos)
+│   ├── schema.sql                → Schema completo do banco (tabelas, RLS, buckets de fotos)
+│   └── migrations/               → Atualizações do banco para quem já tem o projeto criado
 ├── .nojekyll / .gitignore / README.md / CHANGELOG.md
 └── assets/
     ├── css/styles.css           → Todo o visual (estilos)
@@ -66,6 +67,16 @@ FARM/
    um produto público). Se preferir manter a confirmação por e-mail, também funciona.
 4. Em **Project Settings → API**, copie a **Project URL** e a **anon public key** — vai
    precisar delas no passo seguinte e na configuração da Vercel.
+
+### Atualizar um banco já existente
+
+Quando uma versão nova trouxer um arquivo em [`supabase/migrations/`](supabase/migrations/),
+rode esse arquivo (uma vez) no **SQL Editor** do Supabase. Os scripts usam `if not exists` e
+podem ser executados de novo sem problema.
+
+| Versão | Arquivo | O que faz |
+|---|---|---|
+| 4.2.0 | `20261117_animais_campos_extras.sql` | Campos novos do animal: brinco, registro, pelagem, observações e dados de compra |
 
 ---
 

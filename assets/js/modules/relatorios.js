@@ -5,17 +5,18 @@ import { loteCmp, sortByNum, ageMonths, ageDays, getInsemDate } from './data.js'
 
 export function populateReportSources() {
   const container = document.getElementById('reportSourceChecks');
-  container.innerHTML = '';
+  const parts = [];
   const selAllBtn = document.getElementById('btnSelAllSources');
   if (selAllBtn) selAllBtn.textContent = 'Selecionar todos';
   [...state.db.lotes].sort(loteCmp).forEach(l => {
-    container.innerHTML += `<label class="report-check"><input type="checkbox" value="lote:${l.id}"><span>Rebanho — ${esc(l.name)} (${l.animals.length})</span></label>`;
+    parts.push(`<label class="report-check"><input type="checkbox" value="lote:${l.id}"><span>Rebanho — ${esc(l.name)} (${l.animals.length})</span></label>`);
   });
-  if (state.db.medDirect.length) container.innerHTML += `<label class="report-check"><input type="checkbox" value="medicacao"><span>Medicação (${state.db.medDirect.length})</span></label>`;
-  if (state.db.aliDirect.length) container.innerHTML += `<label class="report-check"><input type="checkbox" value="alimentacao"><span>Alimentação (${state.db.aliDirect.length})</span></label>`;
+  if (state.db.medDirect.length) parts.push(`<label class="report-check"><input type="checkbox" value="medicacao"><span>Medicação (${state.db.medDirect.length})</span></label>`);
+  if (state.db.aliDirect.length) parts.push(`<label class="report-check"><input type="checkbox" value="alimentacao"><span>Alimentação (${state.db.aliDirect.length})</span></label>`);
   [...state.db.inseminacao].sort(loteCmp).forEach(p => {
-    container.innerHTML += `<label class="report-check"><input type="checkbox" value="inseminacao:${p.id}"><span>Insem. — ${esc(p.name)} (${p.animals.length})</span></label>`;
+    parts.push(`<label class="report-check"><input type="checkbox" value="inseminacao:${p.id}"><span>Insem. — ${esc(p.name)} (${p.animals.length})</span></label>`);
   });
+  container.innerHTML = parts.join('');
 }
 export function toggleAllReportSources() {
   const boxes = [...document.querySelectorAll('#reportSourceChecks input[type=checkbox]')];
@@ -71,7 +72,7 @@ function csvEscape(v) {
   const s = String(v == null ? '' : v);
   return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-const FIELD_MAP = { num: 'Nº', nome: 'Nome', sexo: 'Sexo', cat: 'Cat.', sit: 'Sit.', raca: 'Raça', peso: 'Peso', leite: 'Leite', idade: 'Idade', origem: 'Origem', tipoPrenhez: 'Tipo Prenhez', pais: 'Mãe/Pai', pesagem: 'Pesagens', ultimoParto: 'Últ. Parto', prenha: 'Dias Prenha', insem: 'Últ. Insem.', lote: 'Lote' };
+const FIELD_MAP = { num: 'Nº', nome: 'Nome', sexo: 'Sexo', cat: 'Cat.', sit: 'Sit.', raca: 'Raça', peso: 'Peso', leite: 'Leite', idade: 'Idade', origem: 'Origem', tipoPrenhez: 'Tipo Prenhez', pais: 'Mãe/Pai', pesagem: 'Pesagens', ultimoParto: 'Últ. Parto', prenha: 'Dias Prenha', insem: 'Últ. Insem.', lote: 'Lote', brinco: 'Brinco', registro: 'Registro', pelagem: 'Pelagem', obs: 'Obs.' };
 
 function fieldValue(f, a) {
   switch (f) {
@@ -83,6 +84,7 @@ function fieldValue(f, a) {
     case 'ultimoParto': return a.ultimoParto ? new Date(a.ultimoParto + 'T12:00').toLocaleDateString('pt-BR') : '';
     case 'prenha': return a.prenhaData ? ageDays(a.prenhaData) + ' dias' : '';
     case 'insem': return getInsemDate(a.num) || ''; case 'lote': return a.loteName || '';
+    case 'brinco': return a.brinco || ''; case 'registro': return a.registro || ''; case 'pelagem': return a.pelagem || ''; case 'obs': return a.obs || '';
     default: return '';
   }
 }
