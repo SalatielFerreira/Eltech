@@ -1,5 +1,5 @@
 /* ============================================================
-   ELTECH - Service Worker
+   FARM - Service Worker
    Estratégia: Network-first para os arquivos do próprio app-shell
    (HTML/CSS/JS) — sempre busca a versão mais nova quando há
    internet, com cache como fallback offline. O app em si (dados)
@@ -13,8 +13,8 @@
    aviso "Nova versão disponível" para quem já tem o app aberto.
    (Mantenha igual em main.js -> APP_VERSION e em version.json)
    ============================================================ */
-const VERSION = '4.1.1';
-const CACHE = 'eltech-v' + VERSION;
+const VERSION = '4.1.2';
+const CACHE = 'farm-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.
 // Note: config.js NÃO entra aqui (é gerado no deploy / preenchido localmente, cada

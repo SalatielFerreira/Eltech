@@ -2,6 +2,18 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.1.2] — 2026-11-17
+
+### App renomeado para FARM
+
+- O nome do aplicativo passa a ser **FARM** (Eltech é o nome da empresa): título da página,
+  barra superior, tela de login, nome do app instalado (PWA), avisos de instalação/atualização/
+  sem internet, relatórios gerados (título e nome do arquivo `FARM_dd-mm-aaaa`) e documentação.
+- Novo rodapé em **Configurações** com a versão do app: `FARM v4.1.2 · Eltech` — único ponto
+  do app onde o nome da empresa aparece.
+- O cache do service worker passou a se chamar `farm-v…` (o cache antigo `eltech-v…` é removido
+  automaticamente na atualização).
+
 ## [4.1.1] — 2026-08-13
 
 ### Limite de 2MB por foto

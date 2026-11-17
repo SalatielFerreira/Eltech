@@ -22,7 +22,11 @@ import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
 
-const APP_VERSION = '4.1.1'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = '4.1.2'; // sincronize com sw.js (VERSION) e version.json
+
+// Versão exibida no rodapé de Configurações — único lugar do app onde aparece "Eltech" (a empresa).
+const versionEl = document.getElementById('appVersion');
+if (versionEl) versionEl.textContent = `FARM v${APP_VERSION} · Eltech`;
 
 Object.assign(window, {
   // ui.js
@@ -124,7 +128,7 @@ function showUpdateBanner(worker) {
   d.id = 'updateBanner';
   d.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;z-index:70;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slideUp .4s ease';
   d.className = 'glass';
-  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Nova versão disponível</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Toque para atualizar o ELTECH</div></div><button class="btn btn-primary btn-sm" id="updateBtn" style="flex-shrink:0">Atualizar</button>';
+  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Nova versão disponível</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Toque para atualizar o FARM</div></div><button class="btn btn-primary btn-sm" id="updateBtn" style="flex-shrink:0">Atualizar</button>';
   document.body.appendChild(d);
   document.getElementById('updateBtn').onclick = () => worker.postMessage('SKIP_WAITING');
 }
@@ -157,7 +161,7 @@ window.addEventListener('beforeinstallprompt', e => {
   d.id = 'installBanner';
   d.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;z-index:60;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slideUp .4s ease';
   d.className = 'glass';
-  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Instalar ELTECH</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Adicione à tela inicial</div></div><button class="btn btn-primary btn-sm" id="installBtn" style="flex-shrink:0">Instalar</button><button id="dismissInstallBtn" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:1.2rem">✕</button>';
+  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Instalar FARM</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Adicione à tela inicial</div></div><button class="btn btn-primary btn-sm" id="installBtn" style="flex-shrink:0">Instalar</button><button id="dismissInstallBtn" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:1.2rem">✕</button>';
   document.body.appendChild(d);
   document.getElementById('installBtn').onclick = () => {
     if (deferredPrompt) deferredPrompt.prompt();
@@ -174,7 +178,7 @@ function updateOnlineBanner() {
   const d = document.createElement('div');
   d.id = 'offlineBanner';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:80;padding:8px;text-align:center;font-size:.75rem;font-weight:600;background:var(--danger);color:#fff';
-  d.textContent = 'Sem internet — reconecte para continuar usando o ELTECH.';
+  d.textContent = 'Sem internet — reconecte para continuar usando o FARM.';
   document.body.appendChild(d);
 }
 window.addEventListener('online', updateOnlineBanner);

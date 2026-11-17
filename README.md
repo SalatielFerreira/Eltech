@@ -1,4 +1,4 @@
-# 🐄 ELTECH — Gestão Pecuária
+# 🐄 FARM — Gestão Pecuária
 
 Aplicativo web (PWA) para gestão de gado leiteiro: controle de **rebanho**, **inseminação**,
 **medicação**, **alimentação** e geração de **relatórios** (Excel/CSV e HTML).
@@ -15,7 +15,7 @@ funcionam em qualquer aparelho em que você entrar com seu e-mail e senha. O app
 ## 📁 Estrutura do projeto
 
 ```
-ELTECH/
+FARM/
 ├── index.html                  → Página principal (HTML das telas e modais)
 ├── manifest.json                → Configuração do app instalável (PWA)
 ├── sw.js                        → Service worker (cache do app-shell + auto-atualização)
@@ -124,13 +124,13 @@ recebe o aviso **"Nova versão disponível → Atualizar"**.
 
 ## 📲 Como instalar o app (PWA)
 
-**Android (Chrome):** abra o site → aparece o banner **"Instalar ELTECH"** → toque em *Instalar*.
+**Android (Chrome):** abra o site → aparece o banner **"Instalar FARM"** → toque em *Instalar*.
 Ou menu **⋮ → Instalar aplicativo / Adicionar à tela inicial**.
 
 **iPhone/iPad (Safari):** toque no botão **Compartilhar** (□↑) → **Adicionar à Tela de Início**.
 
 **Computador (Chrome/Edge):** clique no ícone de instalação (⊕) na barra de endereço,
-ou menu **⋮ → Instalar ELTECH**.
+ou menu **⋮ → Instalar FARM**.
 
 ---
 

@@ -113,7 +113,7 @@ export function registerPageEnter(id, fn) { pageEnterHandlers[id] = fn; }
 
 export function ensureBackBuffer() {
   try {
-    if (!(history.state && history.state.eltechBuffer)) history.pushState({ eltechBuffer: true }, '');
+    if (!(history.state && history.state.farmBuffer)) history.pushState({ farmBuffer: true }, '');
   } catch (e) { /* ambientes sem History API (raro) — ignora */ }
 }
 

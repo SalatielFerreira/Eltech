@@ -1,5 +1,5 @@
 -- ============================================================
--- ELTECH — Schema Supabase (Postgres)
+-- FARM — Schema Supabase (Postgres)
 -- ============================================================
 -- Como usar: abra o painel do seu projeto em supabase.com,
 -- vá em "SQL Editor" -> "New query", cole TODO este arquivo

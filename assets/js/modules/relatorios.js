@@ -130,7 +130,7 @@ export function downloadReport(fmt) {
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `ELTECH_${ds.replace(/\//g, '-')}.csv`;
+    link.download = `FARM_${ds.replace(/\//g, '-')}.csv`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     toast('Excel baixado!');
@@ -166,11 +166,11 @@ export function downloadReport(fmt) {
     }
     tables += `<h2 style="color:#86693f;font-size:16px;margin:24px 0 8px;border-bottom:2px solid #86693f;padding-bottom:6px">${esc(g.planilha)}</h2><table>${rows}</table><p style="font-size:11px;color:#999;margin-top:4px">${g.items.length} registro(s)</p>`;
   });
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ELTECH</title><style>*{margin:0;box-sizing:border-box}body{font-family:Segoe UI,sans-serif;padding:40px 24px;color:#1a1a1a;background:#fff}.hd{text-align:center;margin-bottom:24px}.hd h1{color:#86693f;font-size:28px;letter-spacing:3px}.hd p{color:#666;font-size:12px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}th,td{padding:9px 10px;text-align:left;border-bottom:1px solid #e5e5e5}.hdr th{background:linear-gradient(135deg,#86693f,#a98e5f);color:#fff;font-weight:600;border:none;font-size:11px}.alt td{background:#f3ecda}.ft{text-align:center;margin-top:30px;padding-top:14px;border-top:2px solid #86693f;color:#666;font-size:11px}</style></head><body><div class="hd"><h1>ELTECH</h1><p>Relatório · ${ds} às ${ts}</p></div>${tables}<div class="ft">Total: ${animals.length} registro(s) · Gerado por ELTECH</div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FARM</title><style>*{margin:0;box-sizing:border-box}body{font-family:Segoe UI,sans-serif;padding:40px 24px;color:#1a1a1a;background:#fff}.hd{text-align:center;margin-bottom:24px}.hd h1{color:#86693f;font-size:28px;letter-spacing:3px}.hd p{color:#666;font-size:12px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}th,td{padding:9px 10px;text-align:left;border-bottom:1px solid #e5e5e5}.hdr th{background:linear-gradient(135deg,#86693f,#a98e5f);color:#fff;font-weight:600;border:none;font-size:11px}.alt td{background:#f3ecda}.ft{text-align:center;margin-top:30px;padding-top:14px;border-top:2px solid #86693f;color:#666;font-size:11px}</style></head><body><div class="hd"><h1>FARM</h1><p>Relatório · ${ds} às ${ts}</p></div>${tables}<div class="ft">Total: ${animals.length} registro(s) · Gerado por FARM</div></body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `ELTECH_${ds.replace(/\//g, '-')}.html`;
+  link.download = `FARM_${ds.replace(/\//g, '-')}.html`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   toast('Relatório baixado!');
