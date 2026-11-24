@@ -1,7 +1,7 @@
 // ========== INÍCIO (saudação, atalhos, painel da fazenda, alertas, gráfico) ==========
 import { state } from '../state.js';
-import { esc, toast, registerPageEnter, openModal, goPage } from './ui.js';
-import { getAllAnimals, todayISO, fmtDateBR } from './data.js';
+import { esc, toast, registerPageEnter, openModal, goPage, callAction, act, skeletonHtml } from './ui.js';
+import { getAllAnimals, todayISO, fmtDateBR, buildAnimalLookup } from './data.js';
 import { drawPie, COLORS } from './charts.js';
 import { GESTACAO_DIAS } from './constants.js';
 
@@ -16,10 +16,11 @@ export function setChartFilter(f, btn) {
 
 // Atalhos da tela inicial: levam à página certa e já abrem o formulário.
 export function quickAction(kind) {
-  if (kind === 'animal') { goPage('pageRebanho'); window.openNewAnimal(); }
-  else if (kind === 'insem') { goPage('pageInseminacao'); window.openInsemAnimalDirect(); }
-  else if (kind === 'med') { goPage('pageMedicacao'); window.openNewMed(); }
-  else if (kind === 'ali') { goPage('pageAlimentacao'); window.openNewAli(); }
+  const map = { animal: ['pageRebanho', 'openNewAnimal'], insem: ['pageInseminacao', 'openInsemAnimalDirect'], med: ['pageMedicacao', 'openNewMed'], ali: ['pageAlimentacao', 'openNewAli'] };
+  const [page, fn] = map[kind] || [];
+  if (!page) return;
+  goPage(page);
+  state.ready.then(() => callAction(fn)); // formulários precisam dos dados completos
 }
 
 export function toggleAlerts() { alertsExpanded = !alertsExpanded; renderHomeAlerts(); }
@@ -58,7 +59,7 @@ export function renderFarmPanel() {
   if (!c) return;
   const all = getAllAnimals();
   if (!all.length) {
-    c.innerHTML = `<div class="empty-card"><div class="empty-ico">🐄</div><p>Bem-vindo ao FARM! Comece criando um lote e cadastrando seus animais.</p><button class="btn btn-primary btn-sm" onclick="quickAction('animal')">Cadastrar primeiro animal</button></div>`;
+    c.innerHTML = `<div class="empty-card"><div class="empty-ico">🐄</div><p>Bem-vindo ao FARM! Comece criando um lote e cadastrando seus animais.</p><button class="btn btn-primary btn-sm" data-click="[&quot;quickAction&quot;,&quot;animal&quot;]">Cadastrar primeiro animal</button></div>`;
     return;
   }
   const lact = all.filter(a => a.cat === 'Vaca em lactação');
@@ -113,23 +114,26 @@ export function getAlerts() {
     }
   });
 
+  // Última inseminação de cada animal, identificado pelo ID (nº só para registros antigos).
+  const lk = buildAnimalLookup();
   const lastInsem = {};
-  state.db.inseminacao.forEach(p => p.animals.forEach(a => { if (a.data && (!lastInsem[a.num] || a.data > lastInsem[a.num].data)) lastInsem[a.num] = { data: a.data, nome: a.nome, parecer: a.parecer }; }));
-  const byNum = {};
-  all.forEach(a => { byNum[a.num] = a; });
+  state.db.inseminacao.forEach(p => p.animals.forEach(r => {
+    const key = lk.idOf(r.aid, r.num) || '#' + r.num;
+    if (r.data && (!lastInsem[key] || r.data > lastInsem[key].data)) lastInsem[key] = { data: r.data, nome: r.nome, num: r.num, parecer: r.parecer };
+  }));
   all.forEach(a => {
     if (a.sit !== 'Prenha') return;
-    const base = a.prenhaData || (lastInsem[a.num] && lastInsem[a.num].data);
+    const base = a.prenhaData || (lastInsem[a.id] && lastInsem[a.id].data);
     if (!base) return;
     const exp = addDays(base, GESTACAO_DIAS), dd = dleft(exp);
     if (dd <= 15 && dd >= -20) alerts.push({ kind: 'repro', pri: 1, icon: '🐄', tone: 'warn', title: dd < 0 ? 'Parto pode ter passado' : 'Parto próximo', detail: `#${esc(a.num)} ${esc(a.nome)} · ${fmt(exp)}` + (dd >= 0 ? ` (em ${dd}d)` : ` (${-dd}d atrás)`), aid: a.id });
     if (dd <= 65 && dd >= 50 && a.cat !== 'Vaca seca') alerts.push({ kind: 'repro', pri: 2, icon: '🌾', tone: 'info', title: 'Hora de secar a vaca', detail: `#${esc(a.num)} ${esc(a.nome)} · parto em ${dd}d — secar ~60d antes`, aid: a.id });
   });
-  Object.keys(lastInsem).forEach(num => {
-    const a = byNum[num];
-    const li = lastInsem[num];
+  Object.keys(lastInsem).forEach(key => {
+    const a = lk.byId.get(key);
+    const li = lastInsem[key];
     const since = Math.round((todayTs - new Date(li.data + 'T12:00').getTime()) / 86400000);
-    if (since >= 28 && since <= 60 && !li.parecer && (!a || a.sit !== 'Prenha')) alerts.push({ kind: 'repro', pri: 3, icon: '🔬', tone: 'gold', title: 'Fazer diagnóstico de prenhez', detail: `#${esc(num)} ${esc(li.nome)} · inseminada há ${since}d`, aid: a?.id, page: a ? null : 'pageInseminacao' });
+    if (since >= 28 && since <= 60 && !li.parecer && (!a || a.sit !== 'Prenha')) alerts.push({ kind: 'repro', pri: 3, icon: '🔬', tone: 'gold', title: 'Fazer diagnóstico de prenhez', detail: `#${esc(li.num)} ${esc(li.nome)} · inseminada há ${since}d`, aid: a?.id, page: a ? null : 'pageInseminacao' });
   });
   return alerts.sort((x, y) => x.pri - y.pri);
 }
@@ -137,6 +141,7 @@ export function getAlerts() {
 export function renderHomeAlerts() {
   const c = document.getElementById('homeAlerts');
   if (!c) return;
+  if (!state.loaded) { c.innerHTML = `<div class="alerts-card"><div class="card-head"><h3>Alertas</h3></div>${skeletonHtml(2)}</div>`; return; }
   const alerts = getAlerts();
   if (!alerts.length) {
     c.innerHTML = getAllAnimals().length ? `<div class="alerts-card alerts-ok"><span class="al-ico">✅</span><div><b>Tudo em dia</b><small>Nenhum alerta de carência, parto ou diagnóstico.</small></div></div>` : '';
@@ -146,14 +151,14 @@ export function renderHomeAlerts() {
   alerts.forEach(a => counts[a.kind]++);
   const shown = alertsExpanded ? alerts : alerts.slice(0, ALERTS_VISIBLE);
   const item = a => {
-    const click = a.aid ? `onclick="openFicha('${a.aid}')"` : a.page ? `onclick="goPage('${a.page}')"` : '';
+    const click = a.aid ? act('openFicha', a.aid) : a.page ? act('goPage', a.page) : '';
     return `<div class="al-item al-${a.tone}" ${click}><span class="al-ico">${a.icon}</span><div class="al-txt"><b>${a.title}</b><small>${a.detail}</small></div>${click ? '<svg class="al-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>' : ''}</div>`;
   };
   c.innerHTML = `<div class="alerts-card">
     <div class="card-head"><h3>Alertas <span class="count-pill">${alerts.length}</span></h3></div>
     <div class="al-summary">${counts.car ? `<span class="al-sum al-bad">${counts.car} carência</span>` : ''}${counts.repro ? `<span class="al-sum al-warn">${counts.repro} reprodução</span>` : ''}${counts.med ? `<span class="al-sum al-info">${counts.med} tratamento</span>` : ''}</div>
     ${shown.map(item).join('')}
-    ${alerts.length > ALERTS_VISIBLE ? `<button class="link-btn al-more" onclick="toggleAlerts()">${alertsExpanded ? 'Mostrar menos' : `Ver todos os ${alerts.length} alertas`}</button>` : ''}
+    ${alerts.length > ALERTS_VISIBLE ? `<button class="link-btn al-more" data-click="[&quot;toggleAlerts&quot;]">${alertsExpanded ? 'Mostrar menos' : `Ver todos os ${alerts.length} alertas`}</button>` : ''}
   </div>`;
 }
 

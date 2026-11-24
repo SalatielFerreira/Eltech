@@ -8,12 +8,13 @@
    sem internet, o app avisa e bloqueia edição — não há modo
    offline de dados nesta versão).
    ------------------------------------------------------------
-   AO PUBLICAR UMA NOVA VERSÃO: basta incrementar VERSION abaixo.
-   Isso troca o nome do cache, força a atualização e dispara o
-   aviso "Nova versão disponível" para quem já tem o app aberto.
-   (Mantenha igual em main.js -> APP_VERSION e em version.json)
+   AO PUBLICAR UMA NOVA VERSÃO: altere só o arquivo version.js.
+   O navegador também confere os arquivos importados pelo service
+   worker; a versão nova troca o nome do cache e dispara o aviso
+   "Nova versão disponível" para quem já tem o app aberto.
    ============================================================ */
-const VERSION = '4.3.0';
+importScripts('./version.js');
+const VERSION = self.FARM_VERSION;
 const CACHE = 'farm-v' + VERSION;
 
 // Caminhos RELATIVOS (./) para funcionar no GitHub Pages/Vercel em qualquer subpasta.
@@ -22,6 +23,7 @@ const CACHE = 'farm-v' + VERSION;
 const ASSETS = [
   './',
   './index.html',
+  './version.js',
   './manifest.json',
   './assets/css/styles.css',
   './assets/js/main.js',
@@ -46,8 +48,9 @@ const ASSETS = [
   './assets/js/modules/dashboard.js',
   './assets/js/modules/relatorios.js',
   './assets/js/modules/help.js',
+  './assets/js/modules/lixeira.js',
+  './assets/js/modules/swipe.js',
   './assets/img/icon-192.png',
-  './assets/img/icon-512.png',
   './assets/img/fundo.jpg',
   'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap',
 ];

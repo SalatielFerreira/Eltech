@@ -1,7 +1,8 @@
 // ========== ALIMENTAÇÃO (lote inteiro ou animais individuais) ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown, openActionSheet } from './ui.js';
-import { dbInsert, dbInsertMany, dbUpdate, dbDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown, openActionSheet, act, skeletonHtml } from './ui.js';
+import { dbInsert, dbInsertMany, dbUpdate, softDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid, rpcOr } from './data.js';
+import { bumpTrash } from './lixeira.js';
 import { ICON_DOTS, emptyStateHtml } from './animalRow.js';
 import { COLORS } from './charts.js';
 
@@ -14,6 +15,7 @@ registerAnimalSelectProvider('ali', () => sortByNum(getAllAnimals().slice()));
 
 // ---------- Lista + indicadores ----------
 export function renderAliDirect() {
+  if (!state.loaded) { $('aliKpis').innerHTML = ''; $('aliBreakdown').innerHTML = ''; $('aliDirectList').innerHTML = skeletonHtml(3); return; }
   const items = [...state.db.aliDirect].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const total = items.reduce((s, a) => s + parseFloat(a.custoTotal || 0), 0);
   const cabecas = items.reduce((s, a) => s + (a.numAnimais || 0), 0);
@@ -34,14 +36,14 @@ export function renderAliDirect() {
 
   $('aliListLabel').classList.toggle('hidden', !items.length);
   const container = $('aliDirectList');
-  if (!items.length) { container.innerHTML = emptyStateHtml('Nenhuma alimentação registrada.', { label: 'Registrar alimentação', onclick: 'openNewAli()' }); return; }
+  if (!items.length) { container.innerHTML = emptyStateHtml('Nenhuma alimentação registrada.', { label: 'Registrar alimentação', action: ['openNewAli'] }); return; }
   container.innerHTML = items.map(a => {
     const data = a.createdAt ? new Date(a.createdAt).toLocaleDateString('pt-BR') : '';
     const ingr = (a.dietas || []).map(d => `<span class="tag">${DIET_ICON[d.tipo] || ''} ${esc(d.tipo)}${d.kg ? ` · ${esc(d.kg)} kg` : ''}${d.valorKg ? ` × R$ ${num(d.valorKg)}` : ''}</span>`).join('');
     const animais = a.animais || [];
     const chips = animais.slice(0, 6).map(x => `<span class="tag tag-lote">#${esc(x.num)}</span>`).join('') + (animais.length > 6 ? `<span class="tag">+${animais.length - 6}</span>` : '');
     const porAnimal = a.numAnimais ? brl(parseFloat(a.custoTotal || 0) / a.numAnimais) : '';
-    return `<div class="ani-card ali-card" onclick="openAliActions('${a.id}')">
+    return `<div class="ani-card ali-card" data-click="[&quot;openAliActions&quot;,&quot;${a.id}&quot;]">
   <div class="rec-ico pv-gold">🌾</div>
   <div class="ani-main">
     <div class="ani-top"><span class="ani-name">${esc(a.nomeDieta || 'Dieta')}</span></div>
@@ -49,7 +51,7 @@ export function renderAliDirect() {
     <div class="ani-tags">${ingr}</div>
     <div class="ani-tags">${chips}</div>
   </div>
-  <div class="ali-side"><div class="ali-cost">${brl(a.custoTotal)}</div><button class="ani-more" onclick="event.stopPropagation();openAliActions('${a.id}')" aria-label="Ações">${ICON_DOTS}</button></div>
+  <div class="ali-side"><div class="ali-cost">${brl(a.custoTotal)}</div><button class="ani-more" data-click="[&quot;openAliActions&quot;,&quot;${a.id}&quot;]" aria-label="Ações">${ICON_DOTS}</button></div>
 </div>`;
   }).join('');
 }
@@ -92,8 +94,8 @@ export function loadAliLoteAnimals() {
 export function renderAliLoteList() {
   const list = state.tempAliAnimals;
   const n = list.filter(a => a.included).length;
-  $('aliLoteAnimals').innerHTML = list.length ? `<div class="check-head"><span>${n} de ${list.length} selecionado(s)</span><button type="button" class="link-btn" onclick="toggleAllAliLote()">${n === list.length ? 'Desmarcar todos' : 'Marcar todos'}</button></div>` +
-    list.map((a, i) => `<label class="check-row${a.included ? ' on' : ''}"><input type="checkbox" ${a.included ? 'checked' : ''} onchange="toggleAliAnimalIncluded(${i},this.checked)"><span class="check-box"></span><span>#${esc(a.num)} ${esc(a.nome)}</span></label>`).join('') : '';
+  $('aliLoteAnimals').innerHTML = list.length ? `<div class="check-head"><span>${n} de ${list.length} selecionado(s)</span><button type="button" class="link-btn" data-click="[&quot;toggleAllAliLote&quot;]">${n === list.length ? 'Desmarcar todos' : 'Marcar todos'}</button></div>` +
+    list.map((a, i) => `<label class="check-row${a.included ? ' on' : ''}"><input type="checkbox" ${a.included ? 'checked' : ''} data-change="[&quot;toggleAliAnimalIncluded&quot;,${i},&quot;$checked&quot;]"><span class="check-box"></span><span>#${esc(a.num)} ${esc(a.nome)}</span></label>`).join('') : '';
 }
 export function toggleAllAliLote() {
   const all = state.tempAliAnimals.every(a => a.included);
@@ -114,7 +116,7 @@ export function addAliAnimalNew() {
 export function renderTempAliAnimals() {
   const n = state.tempAliAnimals.length;
   $('aliSelectedAnimals').innerHTML = state.tempAliAnimals.map((a, i) =>
-    `<button type="button" class="pick-chip" onclick="removeAliAnimal(${i})">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') + (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
+    `<button type="button" class="pick-chip" data-click="[&quot;removeAliAnimal&quot;,${i}]">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') + (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
 }
 export function removeAliAnimal(i) { state.tempAliAnimals.splice(i, 1); renderTempAliAnimals(); calcAliCost(); }
 
@@ -127,8 +129,8 @@ export function onDietChange2() {
   const checked = [...document.querySelectorAll('#dietaChecks input[type=checkbox]:checked')].map(cb => cb.value);
   $('dietDetailFields').innerHTML = checked.length ? `<div class="diet-head"><span>Ingrediente</span><span>R$/kg</span><span>kg/animal</span></div>` + checked.map(t => `<div class="diet-row" data-tipo="${esc(t)}">
     <div class="diet-name">${DIET_ICON[t] || '•'} ${esc(t)}</div>
-    <input class="form-input d-val" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" aria-label="Valor por kg de ${esc(t)}" value="${esc(keep[t]?.v || '')}" oninput="calcAliCost()">
-    <input class="form-input d-kg" type="number" min="0" step="0.1" inputmode="decimal" placeholder="0" aria-label="Kg por animal de ${esc(t)}" value="${esc(keep[t]?.k || '')}" oninput="calcAliCost()">
+    <input class="form-input d-val" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" aria-label="Valor por kg de ${esc(t)}" value="${esc(keep[t]?.v || '')}" data-input="[&quot;calcAliCost&quot;]">
+    <input class="form-input d-kg" type="number" min="0" step="0.1" inputmode="decimal" placeholder="0" aria-label="Kg por animal de ${esc(t)}" value="${esc(keep[t]?.k || '')}" data-input="[&quot;calcAliCost&quot;]">
   </div>`).join('') : '';
   calcAliCost();
 }
@@ -191,22 +193,26 @@ export async function saveAliDirect() {
   let totalCost = 0;
   dietas.forEach(d => { totalCost += (parseFloat(d.valorKg) || 0) * (parseFloat(d.kg) || 0) * animais.length; });
 
+  const base = { nome_dieta: nomeDieta, num_animais: animais.length, custo_total: totalCost };
+  const dietRows = dietas.map(d => ({ tipo: d.tipo, valor_kg: d.valorKg || null, kg: d.kg || null }));
+  const aniRows = animais.map(a => ({ num: a.num, nome: a.nome, animal_id: resolveAid(a.num) || null }));
   await safeRun(async () => {
-    let alimentacaoId = state.editAniId;
-    const base = { nome_dieta: nomeDieta, num_animais: animais.length, custo_total: totalCost };
-    let createdAt = Date.now();
-    if (alimentacaoId) {
-      await dbUpdate('alimentacoes', alimentacaoId, base);
-      await dbDeleteWhere('alimentacao_dietas', 'alimentacao_id', alimentacaoId);
-      await dbDeleteWhere('alimentacao_animais', 'alimentacao_id', alimentacaoId);
-      createdAt = state.db.aliDirect.find(x => x.id === alimentacaoId)?.createdAt || createdAt;
-    } else {
-      const row = await dbInsert('alimentacoes', base);
-      alimentacaoId = row.id;
-      createdAt = new Date(row.created_at).getTime() || createdAt;
-    }
-    await dbInsertMany('alimentacao_dietas', dietas.map(d => ({ alimentacao_id: alimentacaoId, tipo: d.tipo, valor_kg: d.valorKg || null, kg: d.kg || null })));
-    await dbInsertMany('alimentacao_animais', animais.map(a => ({ alimentacao_id: alimentacaoId, num: a.num, nome: a.nome, animal_id: resolveAid(a.num) || null })));
+    const editId = state.editAniId;
+    // Tudo numa transação no banco (salvar_alimentacao); sem a função, cai no caminho antigo.
+    const alimentacaoId = await rpcOr('salvar_alimentacao', { p_id: editId || null, p_dados: base, p_dietas: dietRows, p_animais: aniRows }, async () => {
+      let id = editId;
+      if (id) {
+        await dbUpdate('alimentacoes', id, base);
+        await dbDeleteWhere('alimentacao_dietas', 'alimentacao_id', id);
+        await dbDeleteWhere('alimentacao_animais', 'alimentacao_id', id);
+      } else {
+        id = (await dbInsert('alimentacoes', base)).id;
+      }
+      await dbInsertMany('alimentacao_dietas', dietRows.map(d => ({ alimentacao_id: id, ...d })));
+      await dbInsertMany('alimentacao_animais', aniRows.map(a => ({ alimentacao_id: id, ...a })));
+      return id;
+    });
+    const createdAt = (editId && state.db.aliDirect.find(x => x.id === editId)?.createdAt) || Date.now();
     const entry = {
       id: alimentacaoId, createdAt, nomeDieta, numAnimais: animais.length, custoTotal: totalCost,
       dietas, animais: animais.map(a => ({ num: a.num, nome: a.nome, aid: resolveAid(a.num) || '' })),
@@ -220,13 +226,15 @@ export async function saveAliDirect() {
 }
 
 export async function delAliDirect(id) {
-  const ok = await showConfirm('Excluir este registro de alimentação?', '🗑️');
+  const ok = await showConfirm('Excluir este registro de alimentação?' + (state.caps.trash ? ' Ele fica 30 dias na lixeira.' : ''), '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('alimentacoes', id);
+    const r = await softDelete('alimentacoes', id);
+    if (r === 'trash') bumpTrash();
     state.db.aliDirect = state.db.aliDirect.filter(x => x.id !== id);
     renderAliDirect();
-  }, 'Alimentação excluída');
+    toast(r === 'trash' ? 'Alimentação movida para a lixeira' : 'Alimentação excluída');
+  }).catch(() => {});
 }
 
 registerModalSetup('aliAnimalModal', () => {

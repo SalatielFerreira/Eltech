@@ -1,13 +1,14 @@
 // ========== FORMULÁRIO, FICHA E CRUD DO ANIMAL ==========
 import { state } from '../state.js';
 import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerModalSetup, registerModalTeardown, renderListChunked, openActionSheet, refresh } from './ui.js';
-import { dbInsert, dbUpdate, dbDelete, trimHistory, getAllAnimals, sortByNum, ageMonths, ageDays, getAnimalById, matchAnimal, todayISO, toLocalISO, fmtDateBR, buildInsemIndex, dbWriteAnimal } from './data.js';
+import { dbInsert, dbUpdate, softDelete, getAllAnimals, sortByNum, ageMonths, ageDays, getAnimalById, matchAnimal, todayISO, toLocalISO, fmtDateBR, buildInsemIndex, dbWriteAnimal, findMae, findPai, findFilhos } from './data.js';
 import { animalRowHtml, emptyStateHtml, sexIcon, sitTag } from './animalRow.js';
 import { populateLoteSelect, updateFilterBadge } from './lotes.js';
 import { resetAnimalPhoto, setAnimalPhotoUI, uploadAnimalPhoto, deleteAnimalPhoto, getAnimalPhotoUrl, hydrateThumbs } from './fotos.js';
 import { SIT_OPTIONS, CATEGORIAS_MACHO, CATEGORIAS_FEMEA, GESTACAO_DIAS } from './constants.js';
 import { drawLineChart } from './charts.js';
 import { openBaixa } from './baixas.js';
+import { bumpTrash } from './lixeira.js';
 
 const $ = id => document.getElementById(id);
 const val = id => ($(id)?.value || '').trim();
@@ -76,14 +77,15 @@ export function populateMaePaiSelects() {
   const maeSel = $('animalMaeSelect');
   const paiSel = $('animalPaiSelect');
   const prevMae = maeSel.value, prevPai = paiSel.value;
+  // Valores: "a:<id>" = animal do rebanho (ligado pelo ID); "t:<nome>" = touro/sêmen sem cadastro de animal.
   maeSel.innerHTML = '<option value="">Selecione</option>' + sortByNum(all.filter(a => a.sexo === 'Fêmea'))
-    .map(a => `<option value="${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)}</option>`).join('');
+    .map(a => `<option value="a:${a.id}">#${esc(a.num)} - ${esc(a.nome)}</option>`).join('');
   const pais = new Set();
   const paiOpts = ['<option value="">Selecione</option>'];
-  sortByNum(all.filter(a => a.sexo === 'Macho')).forEach(a => { paiOpts.push(`<option value="${esc(a.nome)}">#${esc(a.num)} - ${esc(a.nome)}</option>`); pais.add(a.nome); });
-  (state.db.touros || []).forEach(t => { if (t.nome && !pais.has(t.nome)) { paiOpts.push(`<option value="${esc(t.nome)}">🐂 ${esc(t.nome)} (touro)</option>`); pais.add(t.nome); } });
+  sortByNum(all.filter(a => a.sexo === 'Macho')).forEach(a => { paiOpts.push(`<option value="a:${a.id}">#${esc(a.num)} - ${esc(a.nome)}</option>`); pais.add(a.nome); });
+  (state.db.touros || []).forEach(t => { if (t.nome && !pais.has(t.nome)) { paiOpts.push(`<option value="t:${esc(t.nome)}">🐂 ${esc(t.nome)} (touro)</option>`); pais.add(t.nome); } });
   state.db.inseminacao.forEach(p => p.animals.forEach(a => {
-    if (a.touro && !pais.has(a.touro)) { paiOpts.push(`<option value="${esc(a.touro)}">🧬 ${esc(a.touro)} (sêmen)</option>`); pais.add(a.touro); }
+    if (a.touro && !pais.has(a.touro)) { paiOpts.push(`<option value="t:${esc(a.touro)}">🧬 ${esc(a.touro)} (sêmen)</option>`); pais.add(a.touro); }
   }));
   paiSel.innerHTML = paiOpts.join('');
   if (prevMae) maeSel.value = prevMae;
@@ -127,7 +129,7 @@ export function updateAnimalHints() {
     const owner = findNumOwner(num);
     hint('numHint', owner ? `Nº já usado por ${esc(owner.nome)} (lote ${esc(owner.loteName)})` : '', owner ? 'bad' : '');
   } else if (!state.editAniId) {
-    hint('numHint', `Sugestão: <button type="button" class="chip-link" onclick="useSuggestedNum()">${esc(suggestNextNum())}</button>`);
+    hint('numHint', `Sugestão: <button type="button" class="chip-link" data-click="[&quot;useSuggestedNum&quot;]">${esc(suggestNextNum())}</button>`);
   } else hint('numHint', '');
   // Idade
   const nasc = $('animalDataNasc').value;
@@ -157,6 +159,17 @@ export function useSuggestedNum() {
 }
 
 // ---------- Leitura e validação ----------
+// Converte os selects de mãe/pai ("a:<id>" ou "t:<nome>") em id + nome.
+function parentFromForm(nascido) {
+  if (!nascido) return { nomeMae: val('animalNomeMae'), nomePai: val('animalNomePai'), maeId: '', paiId: '' };
+  const parse = v => {
+    if (!v) return { id: '', nome: '' };
+    if (v.startsWith('a:')) { const a = getAnimalById(v.slice(2)); return { id: a ? a.id : '', nome: a ? a.nome : '' }; }
+    return { id: '', nome: v.replace(/^t:/, '') };
+  };
+  const m = parse($('animalMaeSelect').value), p = parse($('animalPaiSelect').value);
+  return { nomeMae: m.nome, maeId: m.id, nomePai: p.nome, paiId: p.id };
+}
 function readAnimalForm() {
   const origem = $('animalOrigem').value;
   const nascido = origem === 'Nascido';
@@ -164,8 +177,7 @@ function readAnimalForm() {
     num: val('animalNum'), nome: val('animalNome'), loteId: $('animalLote').value,
     origem,
     tipoPrenhez: nascido ? ($('animalTipoPrenhez').value || '') : '',
-    nomeMae: nascido ? ($('animalMaeSelect').value || '') : val('animalNomeMae'),
-    nomePai: nascido ? ($('animalPaiSelect').value || '') : val('animalNomePai'),
+    ...parentFromForm(nascido),
     dataNasc: $('animalDataNasc').value || '',
     sexo: $('animalSexo').value, cat: $('animalCat').value, sit: $('animalSit').value,
     raca: $('animalRaca').value || '', grauSangue: val('animalGrauSangue'), pelagem: val('animalPelagem'),
@@ -202,7 +214,7 @@ function validateAnimal(d) {
     else if (d.dataNasc && d.dataCompra < d.dataNasc) add('animalDataCompra', 'A compra não pode ser antes do nascimento');
   }
   if (d.valorCompra !== '' && Number(d.valorCompra) < 0) add('animalValorCompra', 'Valor inválido');
-  if (d.nomeMae && d.nomeMae === d.nome && d.origem === 'Nascido') add('animalMaeSelect', 'O animal não pode ser a própria mãe');
+  if (state.editAniId && (d.maeId === state.editAniId || d.paiId === state.editAniId)) add('animalMaeSelect', 'O animal não pode ser o próprio pai ou mãe');
   return errs;
 }
 function markInvalid(id, msg) {
@@ -223,13 +235,13 @@ function toRow(d) {
   return {
     lote_id: d.loteId, num: d.num, nome: d.nome, origem: d.origem, tipo_prenhez: d.tipoPrenhez,
     data_nasc: nul(d.dataNasc), sexo: d.sexo, cat: d.cat, sit: d.sit, raca: d.raca, grau_sangue: d.grauSangue,
-    nome_mae: d.nomeMae, nome_pai: d.nomePai, peso: nul(d.peso), leite: nul(d.leite),
+    nome_mae: d.nomeMae, nome_pai: d.nomePai, mae_id: nul(d.maeId), pai_id: nul(d.paiId), peso: nul(d.peso), leite: nul(d.leite),
     ultimo_parto: nul(d.ultimoParto), prenha_data: nul(d.prenhaData),
     brinco: nul(d.brinco), registro: nul(d.registro), pelagem: nul(d.pelagem), obs: nul(d.obs),
     data_compra: nul(d.dataCompra), valor_compra: nul(d.valorCompra), vendedor: nul(d.vendedor),
   };
 }
-const FIELDS = ['num', 'nome', 'origem', 'tipoPrenhez', 'dataNasc', 'sexo', 'cat', 'sit', 'raca', 'grauSangue', 'nomeMae', 'nomePai', 'peso', 'leite',
+const FIELDS = ['num', 'nome', 'origem', 'tipoPrenhez', 'dataNasc', 'sexo', 'cat', 'sit', 'raca', 'grauSangue', 'nomeMae', 'nomePai', 'maeId', 'paiId', 'peso', 'leite',
   'ultimoParto', 'prenhaData', 'brinco', 'registro', 'pelagem', 'obs', 'dataCompra', 'valorCompra', 'vendedor'];
 const pick = d => Object.fromEntries(FIELDS.map(k => [k, d[k]]));
 
@@ -244,13 +256,11 @@ async function registrarHistorico(animalObj, d, old) {
   const hoje = todayISO();
   if (d.peso !== '' && Number(d.peso) !== Number(old?.peso)) {
     await dbInsert('animal_pesagens', { animal_id: animalObj.id, peso: d.peso, data: hoje });
-    animalObj.pesagens = [...(animalObj.pesagens || []), { peso: d.peso, data: hoje }].slice(-5);
-    if (old) await trimHistory('animal_pesagens', animalObj.id, 5);
+    animalObj.pesagens = [...(animalObj.pesagens || []), { peso: d.peso, data: hoje }];
   }
   if (d.leite !== '' && Number(d.leite) !== Number(old?.leite)) {
     await dbInsert('animal_leite_hist', { animal_id: animalObj.id, leite: d.leite, data: hoje });
-    animalObj.leiteHist = [...(animalObj.leiteHist || []), { leite: d.leite, data: hoje }].slice(-20);
-    if (old) await trimHistory('animal_leite_hist', animalObj.id, 20);
+    animalObj.leiteHist = [...(animalObj.leiteHist || []), { leite: d.leite, data: hoje }];
   }
 }
 
@@ -307,8 +317,8 @@ export async function saveAnimalToLote(addAnother = false) {
 
 // Nasceu na propriedade e é recente: atualiza a mãe (último parto, categoria, encerra a prenhez).
 async function atualizarMaeAposNascimento(d) {
-  if (d.origem !== 'Nascido' || !d.nomeMae || !d.dataNasc || ageDays(d.dataNasc) > 300) return;
-  const mae = getAllAnimals().find(a => a.nome === d.nomeMae && a.sexo === 'Fêmea');
+  if (d.origem !== 'Nascido' || !(d.maeId || d.nomeMae) || !d.dataNasc || ageDays(d.dataNasc) > 300) return;
+  const mae = findMae(d);
   if (!mae || (mae.ultimoParto && mae.ultimoParto >= d.dataNasc)) return;
   const patch = { ultimo_parto: d.dataNasc, cat: 'Vaca em lactação', prenha_data: null };
   if (mae.sit === 'Prenha') patch.sit = 'Vazia';
@@ -371,7 +381,13 @@ export async function editAnimalInLote(aid) {
   onOrigemChange();
   if ((a.origem || 'Nascido') === 'Nascido') {
     set('animalTipoPrenhez', a.tipoPrenhez || 'Natural');
-    set('animalMaeSelect', a.nomeMae); set('animalPaiSelect', a.nomePai);
+    const all = getAllAnimals();
+    const mae = findMae(a, all), pai = findPai(a, all);
+    set('animalMaeSelect', mae ? 'a:' + mae.id : '');
+    const paiSel = $('animalPaiSelect');
+    const pv = pai ? 'a:' + pai.id : (a.nomePai ? 't:' + a.nomePai : '');
+    if (pv && ![...paiSel.options].some(o => o.value === pv)) paiSel.insertAdjacentHTML('beforeend', `<option value="${esc(pv)}">${esc(a.nomePai)}</option>`);
+    paiSel.value = pv;
   } else {
     set('animalNomeMae', a.nomeMae); set('animalNomePai', a.nomePai);
     set('animalDataCompra', a.dataCompra); set('animalValorCompra', a.valorCompra); set('animalVendedor', a.vendedor);
@@ -402,15 +418,20 @@ export async function editAnimalInLote(aid) {
 export async function delAnimalFromLote(aid) {
   const a = getAnimalById(aid);
   if (!a) return;
-  const ok = await showConfirm(`Excluir #${a.num} ${a.nome} definitivamente? Para venda ou morte, prefira "Dar baixa" (mantém o histórico).`, '🗑️');
+  const lixeira = state.caps.trash;
+  const ok = await showConfirm(lixeira
+    ? `Excluir #${a.num} ${a.nome}? Ele fica 30 dias na lixeira (Configurações) e pode ser restaurado. Para venda ou morte, prefira "Dar baixa".`
+    : `Excluir #${a.num} ${a.nome} definitivamente? Para venda ou morte, prefira "Dar baixa" (mantém o histórico).`, '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('animais', aid);
-    await deleteAnimalPhoto(aid).catch(() => {});
+    const r = await softDelete('animais', aid);
+    if (r === 'deleted') await deleteAnimalPhoto(aid).catch(() => {});
+    else bumpTrash();
     state.db.lotes.forEach(l => { l.animals = l.animals.filter(x => x.id !== aid); });
     closeModal('fichaModal');
     refresh('rebanho');
-  }, 'Animal excluído');
+    toast(r === 'trash' ? 'Animal movido para a lixeira' : 'Animal excluído');
+  }).catch(() => {});
 }
 
 export function openAnimalActions(aid) {
@@ -462,7 +483,7 @@ export function renderAnimaisFolder() {
   $('animaisSub').textContent = filtered ? `Mostrando ${animals.length} de ${all.length}` : `${all.length} animal(is)`;
   if (!animals.length) {
     c.innerHTML = all.length ? emptyStateHtml('Nenhum animal encontrado com esses filtros.')
-      : emptyStateHtml('Nenhum animal cadastrado ainda.', { label: 'Cadastrar primeiro animal', onclick: 'openNewAnimal()' });
+      : emptyStateHtml('Nenhum animal cadastrado ainda.', { label: 'Cadastrar primeiro animal', action: ['openNewAnimal'] });
     return;
   }
   const insemIndex = buildInsemIndex();
@@ -475,9 +496,8 @@ export async function openFicha(aid) {
   if (!a) return;
   const all = getAllAnimals();
   const fmt = s => fmtDateBR(s) || '—';
-  const mae = a.nomeMae ? all.find(x => x.nome === a.nomeMae && x.sexo === 'Fêmea') : null;
-  const pai = a.nomePai ? all.find(x => x.nome === a.nomePai) : null;
-  const filhos = all.filter(x => x.id !== a.id && a.nome && (x.nomeMae === a.nome || x.nomePai === a.nome));
+  const mae = findMae(a, all), pai = findPai(a, all);
+  const filhos = findFilhos(a, all);
 
   const insem = [];
   state.db.inseminacao.forEach(p => p.animals.forEach(x => { if (matchAnimal(x.num, x.aid, a)) insem.push({ plan: p.name, ...x }); }));
@@ -486,7 +506,7 @@ export async function openFicha(aid) {
   const alis = state.db.aliDirect.filter(r => (r.animais || []).some(x => matchAnimal(x.num, x.aid, a)));
   let feedCost = 0;
   alis.forEach(r => { const n = r.numAnimais || (r.animais || []).length || 1; feedCost += parseFloat(r.custoTotal || 0) / n; });
-  const link = (an, txt) => `<span class="ficha-link" onclick="openFicha('${an.id}')">${esc(txt)}</span>`;
+  const link = (an, txt) => `<span class="ficha-link" data-click="[&quot;openFicha&quot;,&quot;${an.id}&quot;]">${esc(txt)}</span>`;
   const kv = (k, v) => v ? `<div class="kv"><span>${k}</span><b>${v}</b></div>` : '';
   const sec = (icon, title, body) => `<div class="ficha-sec"><div class="ficha-sec-title"><span>${icon}</span>${title}</div>${body}</div>`;
 
@@ -495,7 +515,7 @@ export async function openFicha(aid) {
     <div class="ani-tags"><span class="tag">${esc(a.cat)}</span>${sitTag(a.sit)}<span class="tag tag-lote">${esc(a.loteName || '—')}</span></div>
     <div class="ani-meta">${[a.dataNasc && formatAge(a.dataNasc), a.raca, a.grauSangue && 'GS ' + a.grauSangue].filter(Boolean).map(esc).join(' · ')}</div>
   </div></div>`;
-  html += `<div class="ficha-actions"><button class="btn btn-sm btn-primary" onclick="closeModal('fichaModal');editAnimalInLote('${a.id}')">✏️ Editar</button><button class="btn btn-sm btn-info" onclick="closeModal('fichaModal');openBaixa('${a.id}')">📦 Dar baixa</button></div>`;
+  html += `<div class="ficha-actions"><button class="btn btn-sm btn-primary" data-click="[[&quot;closeModal&quot;,&quot;fichaModal&quot;],[&quot;editAnimalInLote&quot;,&quot;${a.id}&quot;]]">✏️ Editar</button><button class="btn btn-sm btn-info" data-click="[[&quot;closeModal&quot;,&quot;fichaModal&quot;],[&quot;openBaixa&quot;,&quot;${a.id}&quot;]]">📦 Dar baixa</button></div>`;
 
   html += sec('🪪', 'Identificação', '<div class="kv-grid">' +
     kv('Nascimento', a.dataNasc ? fmt(a.dataNasc) : '') + kv('Origem', esc(a.origem === 'Nascido' ? 'Nascido na fazenda' : a.origem)) +
@@ -504,9 +524,9 @@ export async function openFicha(aid) {
     (a.origem === 'Comprado' ? kv('Compra', a.dataCompra ? fmt(a.dataCompra) : '') + kv('Valor pago', a.valorCompra !== '' && a.valorCompra != null ? 'R$ ' + Number(a.valorCompra).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '') + kv('Procedência', esc(a.vendedor)) : '') +
     '</div>' + (a.obs ? `<div class="ficha-obs">${esc(a.obs)}</div>` : ''));
 
-  html += sec('🧬', 'Família', `<div class="kv-grid">${kv('Mãe', mae ? link(mae, a.nomeMae) : esc(a.nomeMae || '—'))}${kv('Pai', pai ? link(pai, a.nomePai) : esc(a.nomePai || '—'))}</div>` +
+  html += sec('🧬', 'Família', `<div class="kv-grid">${kv('Mãe', mae ? link(mae, mae.nome) : esc(a.nomeMae || '—'))}${kv('Pai', pai ? link(pai, pai.nome) : esc(a.nomePai || '—'))}</div>` +
     `<div class="card-sub" style="margin-top:8px">Filhos (${filhos.length})</div>` +
-    (filhos.length ? `<div class="ani-tags">` + filhos.map(f => `<span class="tag tag-click" onclick="openFicha('${f.id}')">#${esc(f.num)} ${esc(f.nome)}</span>`).join('') + `</div>` : ''));
+    (filhos.length ? `<div class="ani-tags">` + filhos.map(f => `<span class="tag tag-click" data-click="[&quot;openFicha&quot;,&quot;${f.id}&quot;]">#${esc(f.num)} ${esc(f.nome)}</span>`).join('') + `</div>` : ''));
 
   let repro = '';
   if (a.sit === 'Prenha') {
@@ -528,8 +548,8 @@ export async function openFicha(aid) {
 
   const lh = a.leiteHist || [], ph = a.pesagens || [];
   if (lh.length || ph.length) {
-    html += sec('📈', 'Evolução', (lh.length ? `<div class="card-sub">Leite (L/dia)</div><canvas id="fichaLeite" width="300" height="130" style="width:100%;margin-bottom:10px"></canvas>` : '') +
-      (ph.length ? `<div class="card-sub">Peso (kg)</div><canvas id="fichaPeso" width="300" height="130" style="width:100%"></canvas>` : ''));
+    html += sec('📈', 'Evolução', (lh.length ? `<div class="card-sub">Leite (L/dia)${lh.length > 30 ? ' · últimos 30 de ' + lh.length : ''}</div><canvas id="fichaLeite" width="300" height="130" style="width:100%;margin-bottom:10px"></canvas>` : '') +
+      (ph.length ? `<div class="card-sub">Peso (kg)${ph.length > 30 ? ' · últimos 30 de ' + ph.length : ''}</div><canvas id="fichaPeso" width="300" height="130" style="width:100%"></canvas>` : ''));
   }
 
   let ev = [];
@@ -551,8 +571,8 @@ export async function openFicha(aid) {
     const el = $('fichaPhoto');
     if (el && url) { el.textContent = ''; el.style.backgroundImage = `url('${url}')`; }
   });
-  if (lh.length) drawLineChart('fichaLeite', lh.map(x => parseFloat(x.leite) || 0), '#1bd171');
-  if (ph.length) drawLineChart('fichaPeso', ph.map(x => parseFloat(x.peso) || 0), '#5b9aff');
+  if (lh.length) drawLineChart('fichaLeite', lh.slice(-30).map(x => parseFloat(x.leite) || 0), '#1bd171');
+  if (ph.length) drawLineChart('fichaPeso', ph.slice(-30).map(x => parseFloat(x.peso) || 0), '#5b9aff');
 }
 
 // Abertura por caminhos antigos (openModal('animalModal') direto) continua funcionando.

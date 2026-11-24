@@ -3,6 +3,7 @@ import { openModal } from './ui.js';
 
 const HELP = {
   pageHome: { t: 'Início', items: [
+    '👆 <b>Arraste o dedo para os lados</b> para trocar de tela, na mesma ordem da barra de baixo. Dentro de uma sub-tela (ex.: um lote), arrastar para a direita volta.',
     'No topo, a saudação com o <b>total de animais, lotes e leite/dia</b>.',
     'Os <b>atalhos</b> (Animal, Inseminação, Medicação, Alimentação) já abrem o formulário certo.',
     '<b>Painel da fazenda</b>: taxa de prenhez (anel), vacas em lactação, média de leite por vaca, animais em tratamento e custo de ração.',
@@ -49,6 +50,7 @@ const HELP = {
     'Toque na <b>foto</b> ou no <b>nome</b> para alterar seu perfil.',
     '<b>Alterar senha</b>: abra o item, informe a senha atual e a nova.',
     '<b>Atualizar dados</b>: traz o que foi alterado em outro aparelho sem precisar sair do app.',
+    '🗑️ <b>Lixeira</b>: animais, lotes, planilhas, medicações e alimentações excluídos ficam 30 dias aqui. Dá para <b>restaurar</b> ou apagar de vez.',
     '☁️ Seus dados ficam na nuvem: em outro aparelho, é só entrar com o mesmo e-mail e senha.',
   ] },
 };

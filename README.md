@@ -1,7 +1,8 @@
 # 🐄 FARM — Gestão Pecuária
 
 Aplicativo web (PWA) para gestão de gado leiteiro: controle de **rebanho**, **inseminação**,
-**medicação**, **alimentação** e geração de **relatórios** (Excel/CSV e HTML).
+**medicação**, **alimentação** e geração de **relatórios** (Excel e PDF). Feito para o
+celular: telas pensadas para dedos, troca de tela arrastando para os lados e lixeira de 30 dias.
 
 Os dados ficam salvos na nuvem (**Supabase**: banco de dados + autenticação + fotos), então
 funcionam em qualquer aparelho em que você entrar com seu e-mail e senha. O app pode ser
@@ -19,13 +20,15 @@ FARM/
 ├── index.html                  → Página principal (HTML das telas e modais)
 ├── manifest.json                → Configuração do app instalável (PWA)
 ├── sw.js                        → Service worker (cache do app-shell + auto-atualização)
-├── version.json                 → Versão atual do app
+├── version.js                   → Versão do app (ÚNICO lugar para mudar ao publicar)
 ├── vercel.json                  → Gera assets/js/config.js no deploy da Vercel
 ├── scripts/
 │   └── generate-config.js       → Lê as Environment Variables da Vercel e gera config.js
 ├── supabase/
 │   ├── schema.sql                → Schema completo do banco (tabelas, RLS, buckets de fotos)
 │   └── migrations/               → Atualizações do banco para quem já tem o projeto criado
+├── tests/                       → Testes automatizados (Playwright + Supabase falso em memória)
+├── .github/workflows/testes.yml → Roda os testes a cada push (GitHub Actions)
 ├── .nojekyll / .gitignore / README.md / CHANGELOG.md
 └── assets/
     ├── css/styles.css           → Todo o visual (estilos)
@@ -35,12 +38,14 @@ FARM/
         ├── config.js             → Suas credenciais reais (gitignored, você cria localmente)
         ├── supabaseClient.js     → Cliente único do Supabase
         ├── state.js               → Estado em memória da sessão atual
-        ├── main.js                → Ponto de entrada (é o único <script> carregado pelo HTML)
+        ├── main.js                → Ponto de entrada: registra as ações usadas pelo HTML
         └── modules/               → Toda a lógica, dividida por assunto
-            ├── ui.js                (toast, modais, confirmação, navegação)
+            ├── ui.js                (toast, janelas, navegação, sistema de ações data-click)
+            ├── swipe.js             (arrasto lateral entre telas)
+            ├── lixeira.js           (lixeira de 30 dias)
             ├── charts.js            (gráfico de pizza e de linha)
             ├── constants.js         (listas de opções compartilhadas)
-            ├── data.js              (acesso ao Supabase + helpers de leitura)
+            ├── data.js              (Supabase: leitura paginada, carregamento em 2 fases, RPC)
             ├── animalRow.js         (template de uma linha de animal em lista)
             ├── auth.js              (login/cadastro/logout/troca de senha)
             ├── profile.js           (nome e foto de perfil)
@@ -49,7 +54,7 @@ FARM/
             ├── touros.js / inseminacao.js
             ├── medicacao.js / alimentacao.js
             ├── dashboard.js         (Início: gráfico, alertas, painel do sítio)
-            ├── relatorios.js        (exportação em CSV/HTML)
+            ├── relatorios.js        (Excel/CSV e PDF pela impressão do navegador)
             └── help.js              (botão "?" de ajuda por página)
 ```
 
@@ -77,6 +82,10 @@ podem ser executados de novo sem problema.
 | Versão | Arquivo | O que faz |
 |---|---|---|
 | 4.2.0 | `20261117_animais_campos_extras.sql` | Campos novos do animal: brinco, registro, pelagem, observações e dados de compra |
+| 4.4.0 | `20261124_v44_integridade_lixeira.sql` | Mãe/pai ligados pelo ID, lixeira de 30 dias, nº do animal único e gravações atômicas (tudo ou nada) |
+
+Sem as migrações o app **continua funcionando** (com o comportamento anterior) e avisa
+quando um recurso depende delas.
 
 ---
 
@@ -94,6 +103,22 @@ npx serve .
 
 Depois acesse a URL indicada pelo servidor, crie uma conta pela aba **Cadastrar** e teste as
 telas normalmente.
+
+### Testes automatizados
+
+Os testes abrem o app num navegador sem janela, em tamanho de celular, com um **Supabase
+falso em memória** (não tocam no banco real). Cobrem cadastro, rebanho, inseminação,
+medicação, alimentação, relatórios, lixeira, arrasto lateral, banco sem migração e a
+política de segurança.
+
+```bash
+pip install -r tests/requirements.txt
+python -m playwright install chromium   # na 1ª vez (ou usa o Chrome instalado)
+python tests/run_all.py                 # todas as suítes
+python tests/farm.py perf               # medição de desempenho (celular lento simulado)
+```
+
+A cada `git push`, o GitHub Actions roda a mesma suíte (aba **Actions** do repositório).
 
 ---
 
@@ -123,10 +148,8 @@ automaticamente.
 Sempre que alterar o app e quiser publicar:
 
 1. Faça as alterações e commit/push (a Vercel publica sozinha).
-2. **Aumente o número da versão em 3 lugares** (mantenha os três iguais):
-   - `version.json` → campo `"version"`
-   - `sw.js` → constante `VERSION`
-   - `assets/js/main.js` → constante `APP_VERSION`
+2. **Aumente o número da versão em `version.js`** (é o único lugar: o app e o service
+   worker leem dali).
 
 Mudar a versão troca o nome do cache do service worker, então quem já tem o app aberto
 recebe o aviso **"Nova versão disponível → Atualizar"**.
@@ -150,3 +173,7 @@ ou menu **⋮ → Instalar FARM**.
 Cada usuário só enxerga os próprios dados — isso é garantido pelas políticas de **Row Level
 Security** do Postgres (`supabase/schema.sql`), aplicadas no banco, não apenas na tela.
 As fotos ficam em buckets privados do Supabase Storage, também restritos por usuário.
+
+O app tem uma **política de segurança de conteúdo (CSP)**: só roda scripts do próprio site e
+da CDN do Supabase, e o HTML não tem código inline (`onclick`) — os botões usam
+`data-click` e as ações ficam registradas no `main.js`.

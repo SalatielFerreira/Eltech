@@ -1,7 +1,8 @@
 // ========== MEDICAÇÃO (lote inteiro ou animais individuais) ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown, openActionSheet } from './ui.js';
-import { dbInsert, dbInsertMany, dbUpdate, dbDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO, toLocalISO, fmtDateBR } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerAnimalSelectProvider, registerModalSetup, registerModalTeardown, openActionSheet, act, skeletonHtml } from './ui.js';
+import { dbInsert, dbInsertMany, dbUpdate, softDelete, dbDeleteWhere, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO, toLocalISO, fmtDateBR, rpcOr } from './data.js';
+import { bumpTrash } from './lixeira.js';
 import { ICON_DOTS, emptyStateHtml } from './animalRow.js';
 
 const $ = id => document.getElementById(id);
@@ -53,6 +54,7 @@ function renderMedKpis(all) {
 
 export function renderMedDirect() {
   const container = $('medDirectList');
+  if (!state.loaded) { $('medKpis').innerHTML = ''; container.innerHTML = skeletonHtml(3); return; }
   const all = state.db.medDirect;
   renderMedKpis(all);
   const q = ($('searchMedicacao')?.value || '').toLowerCase().trim();
@@ -68,7 +70,7 @@ export function renderMedDirect() {
   }).sort((a, b) => (b.dataIni || '').localeCompare(a.dataIni || ''));
   if (!items.length) {
     container.innerHTML = all.length ? emptyStateHtml('Nenhuma medicação com esse filtro.')
-      : emptyStateHtml('Nenhuma medicação registrada.', { label: 'Registrar medicação', onclick: 'openNewMed()' });
+      : emptyStateHtml('Nenhuma medicação registrada.', { label: 'Registrar medicação', action: ['openNewMed'] });
     return;
   }
   const t = todayISO();
@@ -84,7 +86,7 @@ export function renderMedDirect() {
     }).join('');
     const animais = r.animais || [];
     const chips = animais.slice(0, 6).map(x => `<span class="tag tag-lote">#${esc(x.num)} ${esc(x.nome)}</span>`).join('') + (animais.length > 6 ? `<span class="tag">+${animais.length - 6}</span>` : '');
-    return `<div class="ani-card med-card" onclick="openMedActions('${r.id}')">
+    return `<div class="ani-card med-card" data-click="[&quot;openMedActions&quot;,&quot;${r.id}&quot;]">
   <div class="rec-ico ${cls}">${ico}</div>
   <div class="ani-main">
     <div class="ani-top"><span class="ani-name">${esc(r.tipo || 'Medicação')}</span><span class="tag ${st.cls}">${st.label}</span></div>
@@ -93,7 +95,7 @@ export function renderMedDirect() {
     ${car ? `<div class="car-chips">${car}</div>` : ''}
     <div class="ani-tags">${chips}</div>
   </div>
-  <button class="ani-more" onclick="event.stopPropagation();openMedActions('${r.id}')" aria-label="Ações">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openMedActions&quot;,&quot;${r.id}&quot;]" aria-label="Ações">${ICON_DOTS}</button>
 </div>`;
   }).join('');
 }
@@ -141,8 +143,8 @@ export function loadMedLoteAnimals() {
 export function renderMedLoteList() {
   const list = state.tempMedAnimals;
   const n = list.filter(a => a.included).length;
-  $('medLoteAnimals').innerHTML = list.length ? `<div class="check-head"><span>${n} de ${list.length} selecionado(s)</span><button type="button" class="link-btn" onclick="toggleAllMedLote()">${n === list.length ? 'Desmarcar todos' : 'Marcar todos'}</button></div>` +
-    list.map((a, i) => `<label class="check-row${a.included ? ' on' : ''}"><input type="checkbox" ${a.included ? 'checked' : ''} onchange="toggleMedAnimalIncluded(${i},this.checked)"><span class="check-box"></span><span>#${esc(a.num)} ${esc(a.nome)}</span></label>`).join('') : '';
+  $('medLoteAnimals').innerHTML = list.length ? `<div class="check-head"><span>${n} de ${list.length} selecionado(s)</span><button type="button" class="link-btn" data-click="[&quot;toggleAllMedLote&quot;]">${n === list.length ? 'Desmarcar todos' : 'Marcar todos'}</button></div>` +
+    list.map((a, i) => `<label class="check-row${a.included ? ' on' : ''}"><input type="checkbox" ${a.included ? 'checked' : ''} data-change="[&quot;toggleMedAnimalIncluded&quot;,${i},&quot;$checked&quot;]"><span class="check-box"></span><span>#${esc(a.num)} ${esc(a.nome)}</span></label>`).join('') : '';
 }
 export function toggleAllMedLote() {
   const all = state.tempMedAnimals.every(a => a.included);
@@ -162,11 +164,11 @@ export function addMedAnimalIndiv() {
 export function renderMedIndivList() {
   const n = state.tempMedAnimals.length;
   $('medSelectedAnimals').innerHTML = state.tempMedAnimals.map((a, i) =>
-    `<button type="button" class="pick-chip" onclick="removeMedIndivAnimal(${i})">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') + (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
+    `<button type="button" class="pick-chip" data-click="[&quot;removeMedIndivAnimal&quot;,${i}]">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') + (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
 }
 export function removeMedIndivAnimal(i) { state.tempMedAnimals.splice(i, 1); renderMedIndivList(); }
 
-const medRowHtml = (m = {}, removable = true) => `<div class="med-row"><input class="form-input medNomeInput" placeholder="Medicamento" aria-label="Medicamento" value="${esc(m.nome || '')}"><input class="form-input medDoseInput" placeholder="Dose" aria-label="Dose" value="${esc(m.dose || '')}">${removable ? '<button type="button" class="row-del" onclick="this.parentElement.remove()" aria-label="Remover medicamento">✕</button>' : ''}</div>`;
+const medRowHtml = (m = {}, removable = true) => `<div class="med-row"><input class="form-input medNomeInput" placeholder="Medicamento" aria-label="Medicamento" value="${esc(m.nome || '')}"><input class="form-input medDoseInput" placeholder="Dose" aria-label="Dose" value="${esc(m.dose || '')}">${removable ? '<button type="button" class="row-del" data-click="[&quot;removeParent&quot;,&quot;$this&quot;]" aria-label="Remover medicamento">✕</button>' : ''}</div>`;
 export function addMedRow() {
   $('medMedicamentos').insertAdjacentHTML('beforeend', medRowHtml());
   const inputs = $('medMedicamentos').querySelectorAll('.medNomeInput');
@@ -244,18 +246,22 @@ export async function saveMedAnimal() {
     data_ini: ini, data_fim: fim, tipo: $('medTipo').value,
     carencia_leite: $('medCarLeite').value || null, carencia_carne: $('medCarCarne').value || null,
   };
+  const animaisRows = animalsToSave.map(a => ({ num: a.num, nome: a.nome, animal_id: resolveAid(a.num) || null }));
   await safeRun(async () => {
-    let medicacaoId = state.editAniId;
-    if (medicacaoId) {
-      await dbUpdate('medicacoes', medicacaoId, base);
-      await dbDeleteWhere('medicacao_medicamentos', 'medicacao_id', medicacaoId);
-      await dbDeleteWhere('medicacao_animais', 'medicacao_id', medicacaoId);
-    } else {
-      const row = await dbInsert('medicacoes', base);
-      medicacaoId = row.id;
-    }
-    await dbInsertMany('medicacao_medicamentos', meds.map(m => ({ medicacao_id: medicacaoId, nome: m.nome, dose: m.dose || null })));
-    await dbInsertMany('medicacao_animais', animalsToSave.map(a => ({ medicacao_id: medicacaoId, num: a.num, nome: a.nome, animal_id: resolveAid(a.num) || null })));
+    // Tudo numa transação no banco (salvar_medicacao); sem a função, cai no caminho antigo.
+    const medicacaoId = await rpcOr('salvar_medicacao', { p_id: state.editAniId || null, p_dados: base, p_medicamentos: meds, p_animais: animaisRows }, async () => {
+      let id = state.editAniId;
+      if (id) {
+        await dbUpdate('medicacoes', id, base);
+        await dbDeleteWhere('medicacao_medicamentos', 'medicacao_id', id);
+        await dbDeleteWhere('medicacao_animais', 'medicacao_id', id);
+      } else {
+        id = (await dbInsert('medicacoes', base)).id;
+      }
+      await dbInsertMany('medicacao_medicamentos', meds.map(m => ({ medicacao_id: id, nome: m.nome, dose: m.dose || null })));
+      await dbInsertMany('medicacao_animais', animaisRows.map(a => ({ medicacao_id: id, ...a })));
+      return id;
+    });
     const entry = {
       id: medicacaoId, dataIni: ini || '', dataFim: fim || '', tipo: base.tipo,
       carenciaLeite: base.carencia_leite || '', carenciaCarne: base.carencia_carne || '',
@@ -269,13 +275,15 @@ export async function saveMedAnimal() {
 }
 
 export async function delMedDirect(id) {
-  const ok = await showConfirm('Excluir este registro de medicação?', '🗑️');
+  const ok = await showConfirm('Excluir este registro de medicação?' + (state.caps.trash ? ' Ele fica 30 dias na lixeira.' : ''), '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('medicacoes', id);
+    const r = await softDelete('medicacoes', id);
+    if (r === 'trash') bumpTrash();
     state.db.medDirect = state.db.medDirect.filter(x => x.id !== id);
     renderMedDirect();
-  }, 'Medicação excluída');
+    toast(r === 'trash' ? 'Medicação movida para a lixeira' : 'Medicação excluída');
+  }).catch(() => {});
 }
 
 registerModalSetup('medAnimalModal', () => {

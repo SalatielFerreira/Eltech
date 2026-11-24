@@ -1,0 +1,26 @@
+# Roda os testes automatizados do FARM a cada push e pull request.
+# Os testes abrem o app num navegador sem janela, em tamanho de celular, com um
+# Supabase falso em memória (tests/mock_supabase.js) — não usam o banco real.
+name: Testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Playwright
+        run: |
+          pip install -r tests/requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Rodar os testes
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python tests/run_all.py

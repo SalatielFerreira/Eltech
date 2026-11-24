@@ -44,12 +44,12 @@ export function renderTouros() {
   const uso = usoPorTouro();
   c.innerHTML = list.map(t => {
     const meta = [t.raca, t.grauSangue && 'GS ' + t.grauSangue, t.registro && 'Reg. ' + t.registro].filter(Boolean).map(esc).join(' · ');
-    return `<div class="ani-card" onclick="openTouroActions('${t.id}')">
+    return `<div class="ani-card" data-click="[&quot;openTouroActions&quot;,&quot;${t.id}&quot;]">
   <div class="rec-ico pv-gold">🐂</div>
   <div class="ani-main"><div class="ani-top"><span class="ani-name">${esc(t.nome)}</span></div>
     ${meta ? `<div class="ani-meta">${meta}</div>` : ''}
     <div class="ani-tags"><span class="tag">${uso[t.nome] || 0} inseminação(ões)</span></div></div>
-  <button class="ani-more" onclick="event.stopPropagation();openTouroActions('${t.id}')" aria-label="Ações">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openTouroActions&quot;,&quot;${t.id}&quot;]" aria-label="Ações">${ICON_DOTS}</button>
 </div>`;
   }).join('');
 }

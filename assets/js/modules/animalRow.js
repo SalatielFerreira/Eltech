@@ -1,7 +1,7 @@
 // ========== TEMPLATES COMPARTILHADOS DO REBANHO ==========
 // Cartão de animal usado em "Todos os animais" e no detalhe do lote. Fica num
 // módulo próprio para lotes.js e animais.js poderem usar sem importar um ao outro.
-import { esc } from './ui.js';
+import { esc, act } from './ui.js';
 import { ageDays } from './data.js';
 import { GESTACAO_DIAS } from './constants.js';
 
@@ -23,7 +23,7 @@ export function sitTag(sit) {
 }
 
 // opts.showLote: mostra o lote (fora do detalhe do lote)
-// opts.insemIndex: Map nº -> data da última inseminação (ver data.buildInsemIndex)
+// opts.insemIndex: Map id do animal -> data da última inseminação (ver data.buildInsemIndex)
 export function animalRowHtml(a, opts = {}) {
   const meta = [a.raca, a.grauSangue && 'GS ' + a.grauSangue, a.peso !== '' && a.peso != null && a.peso + ' kg', a.leite !== '' && a.leite != null && a.leite + ' L/dia']
     .filter(Boolean).map(esc).join(' · ');
@@ -33,19 +33,19 @@ export function animalRowHtml(a, opts = {}) {
     const exp = new Date(a.prenhaData + 'T12:00'); exp.setDate(exp.getDate() + GESTACAO_DIAS);
     repro.push('Prenhe há ' + ageDays(a.prenhaData) + 'd · parto ' + shortDate(exp));
   }
-  const ins = opts.insemIndex?.get(a.num);
+  const ins = opts.insemIndex?.get(a.id);
   if (ins) repro.push('Insem. ' + shortDate(new Date(ins + 'T12:00')));
-  return `<div class="ani-card" data-aid="${a.id}" onclick="openFicha('${a.id}')">
+  return `<div class="ani-card" data-aid="${a.id}" data-click="[&quot;openFicha&quot;,&quot;${a.id}&quot;]">
   <div class="ani-thumb" data-aid="${a.id}">🐄</div>
   <div class="ani-main">
     <div class="ani-top"><span class="ani-num">#${esc(a.num)}</span><span class="ani-name">${esc(a.nome)}</span>${sexIcon(a.sexo)}</div>
     <div class="ani-tags"><span class="tag">${esc(a.cat)}</span>${sitTag(a.sit)}${opts.showLote ? `<span class="tag tag-lote">${esc(a.loteName || '')}</span>` : ''}</div>
     ${meta ? `<div class="ani-meta">${meta}</div>` : ''}${repro.length ? `<div class="ani-meta ani-repro">${repro.join(' · ')}</div>` : ''}
   </div>
-  <button class="ani-more" onclick="event.stopPropagation();openAnimalActions('${a.id}')" aria-label="Ações do animal">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openAnimalActions&quot;,&quot;${a.id}&quot;]" aria-label="Ações do animal">${ICON_DOTS}</button>
 </div>`;
 }
 
 export function emptyStateHtml(text, cta) {
-  return `<div class="empty-card"><div class="empty-ico">🐄</div><p>${esc(text)}</p>${cta ? `<button class="btn btn-primary btn-sm" onclick="${cta.onclick}">${esc(cta.label)}</button>` : ''}</div>`;
+  return `<div class="empty-card"><div class="empty-ico">🐄</div><p>${esc(text)}</p>${cta ? `<button class="btn btn-primary btn-sm" ${act(...cta.action)}>${esc(cta.label)}</button>` : ''}</div>`;
 }

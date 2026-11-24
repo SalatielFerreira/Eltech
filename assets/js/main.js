@@ -1,10 +1,9 @@
 // ========== PONTO DE ENTRADA ==========
-// index.html carrega só este arquivo (`<script type="module" src="assets/js/main.js">`).
-// Como o HTML usa atributos inline (onclick="fn()", oninput="fn()"...) — mantidos de
-// propósito para não precisar reescrever nenhuma tela — e módulos ES não colocam suas
-// funções no escopo global sozinhos, este arquivo importa cada módulo de domínio (o que já
-// dispara os registros feitos em cada um: registerPageEnter/registerModalSetup/
-// registerAnimalSelectProvider) e expõe as funções chamadas pelo HTML em `window`.
+// index.html carrega version.js (versão única do app) e este módulo. Aqui cada módulo de
+// domínio é importado (o que dispara os registros de páginas/janelas) e as funções que o
+// HTML usa são registradas como AÇÕES — o HTML não tem onclick; usa data-click/data-input/
+// data-change (ver ui.js -> "Ações"). Isso permite uma política de segurança (CSP) que
+// bloqueia scripts inline.
 import { state } from './state.js';
 import * as ui from './modules/ui.js';
 import * as auth from './modules/auth.js';
@@ -21,14 +20,44 @@ import * as alimentacao from './modules/alimentacao.js';
 import * as dashboard from './modules/dashboard.js';
 import * as relatorios from './modules/relatorios.js';
 import * as help from './modules/help.js';
+import * as lixeira from './modules/lixeira.js';
+import './modules/swipe.js';
 
-const APP_VERSION = '4.3.0'; // sincronize com sw.js (VERSION) e version.json
+const APP_VERSION = window.FARM_VERSION || '?'; // definida só em version.js
 
 // Versão exibida no rodapé de Configurações — único lugar do app onde aparece "Eltech" (a empresa).
 const versionEl = document.getElementById('appVersion');
 if (versionEl) versionEl.textContent = `FARM v${APP_VERSION} · Eltech`;
 
-Object.assign(window, {
+// ---------- Voltar (botão do celular, arrasto para a direita) ----------
+// Fecha janela aberta > sai de sub-tela > volta à aba anterior. Devolve false se não havia
+// para onde voltar.
+function showView(el) {
+  if (!el) return;
+  el.classList.remove('view-in');
+  void el.offsetWidth; // reinicia a animação
+  el.classList.add('view-in');
+}
+function goBack() {
+  const modal = document.querySelector('.modal-overlay.show');
+  if (modal) { ui.closeModal(modal.id); return true; }
+  const visible = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); };
+  const page = document.querySelector('.page.active')?.id;
+  if (page === 'pageRebanho') {
+    if (visible('loteDetail')) { lotes.backToLotes(); showView(document.getElementById('lotesView')); return true; }
+    if (['animaisView', 'lotesView', 'baixasView'].some(visible)) { rebanho.backToRebanhoHome(); showView(document.getElementById('rebanhoHome')); return true; }
+  }
+  if (page === 'pageInseminacao' && visible('insemDetail')) { inseminacao.backToList(); showView(document.getElementById('insemList')); return true; }
+  if (state.pageHistory.length) { state.navLock = true; ui.goPage(state.pageHistory.pop()); state.navLock = false; return true; }
+  return false;
+}
+
+// Pequenas ações de formulário que antes eram código inline no HTML.
+const onlyLetters = el => { el.value = el.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, ''); };
+const removeParent = el => el.parentElement?.remove();
+
+const ACTIONS = {
+  goBack, onlyLetters, removeParent,
   // ui.js
   togglePass: ui.togglePass, showConfirm: ui.showConfirm, confirmResolve: ui.confirmResolve,
   switchLoginTab: ui.switchLoginTab, openModal: ui.openModal, closeModal: ui.closeModal,
@@ -36,10 +65,8 @@ Object.assign(window, {
   filterAnimalSelect: ui.filterAnimalSelect,
   // auth.js
   doLogin: auth.doLogin, doRegister: auth.doRegister, doLogout: auth.doLogout, changePassword: auth.changePassword, reloadData: auth.reloadData,
-  // profile.js
-  setAvatar: profile.setAvatar,
-  // fotos.js (form de foto do animal)
-  onAnimalPhoto: fotos.onAnimalPhoto, removeAnimalPhoto: fotos.removeAnimalPhoto,
+  // profile.js / fotos.js
+  setAvatar: profile.setAvatar, onAnimalPhoto: fotos.onAnimalPhoto, removeAnimalPhoto: fotos.removeAnimalPhoto,
   // lotes.js
   saveLote: lotes.saveLote, editLoteFromCard: lotes.editLoteFromCard, delLote: lotes.delLote,
   openLoteDetail: lotes.openLoteDetail, backToLotes: lotes.backToLotes, toggleLoteFilter: lotes.toggleLoteFilter,
@@ -92,7 +119,12 @@ Object.assign(window, {
   toggleAllReportSources: relatorios.toggleAllReportSources, downloadReport: relatorios.downloadReport, updateReportSummary: relatorios.updateReportSummary,
   // help.js
   openHelp: help.openHelp,
-});
+  // lixeira.js
+  openLixeira: lixeira.openLixeira, restoreTrashItem: lixeira.restoreTrashItem, purgeTrashItem: lixeira.purgeTrashItem, emptyTrash: lixeira.emptyTrash,
+};
+ui.registerActions(ACTIONS);
+// Um único ponto de acesso para depuração e para os testes automatizados (window.FARM.goPage(...)).
+window.FARM = { ...ACTIONS, state, version: APP_VERSION };
 
 // ---------- Enter para logar/cadastrar ----------
 ['loginEmail', 'loginPass'].forEach(id => {
@@ -110,25 +142,16 @@ document.getElementById('regPass')?.addEventListener('input', function () {
 
 profile.initProfileNameListener();
 
-// ---------- Botão "voltar" do celular: fecha modal / volta de tela em vez de sair do app ----------
+// ---------- Botão "voltar" do celular: fecha janela / volta de tela em vez de sair do app ----------
 let _lastBack = 0;
 window.addEventListener('popstate', () => {
-  const modal = document.querySelector('.modal-overlay.show');
-  if (modal) { ui.closeModal(modal.id); ui.ensureBackBuffer(); return; }
   const main = document.getElementById('mainApp');
-  if (main && main.style.display !== 'none') {
-    const ld = document.getElementById('loteDetail');
-    if (ld && !ld.classList.contains('hidden')) { lotes.backToLotes(); ui.ensureBackBuffer(); return; }
-    const rv = ['animaisView', 'lotesView', 'baixasView'].map(x => document.getElementById(x)).find(e => e && !e.classList.contains('hidden'));
-    if (rv) { rebanho.backToRebanhoHome(); ui.ensureBackBuffer(); return; }
-    const idt = document.getElementById('insemDetail');
-    if (idt && !idt.classList.contains('hidden')) { inseminacao.backToList(); ui.ensureBackBuffer(); return; }
-    if (state.pageHistory.length) { state.navLock = true; ui.goPage(state.pageHistory.pop()); state.navLock = false; ui.ensureBackBuffer(); return; }
-    if (Date.now() - _lastBack < 2000) return;
-    _lastBack = Date.now();
-    ui.toast('Toque em voltar novamente para sair', 'info');
-    ui.ensureBackBuffer();
-  }
+  if (!main || main.style.display === 'none') return;
+  if (goBack()) { ui.ensureBackBuffer(); return; }
+  if (Date.now() - _lastBack < 2000) return;
+  _lastBack = Date.now();
+  ui.toast('Toque em voltar novamente para sair', 'info');
+  ui.ensureBackBuffer();
 });
 
 // ---------- PWA: service worker, auto-atualização, instalação ----------
@@ -136,11 +159,10 @@ function showUpdateBanner(worker) {
   if (document.getElementById('updateBanner')) return;
   const d = document.createElement('div');
   d.id = 'updateBanner';
-  d.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;z-index:70;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slideUp .4s ease';
-  d.className = 'glass';
-  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Nova versão disponível</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Toque para atualizar o FARM</div></div><button class="btn btn-primary btn-sm" id="updateBtn" style="flex-shrink:0">Atualizar</button>';
+  d.className = 'glass app-banner';
+  d.innerHTML = '<div class="app-banner-txt"><b>Nova versão disponível</b><small>Toque para atualizar o FARM</small></div><button class="btn btn-primary btn-sm" id="updateBtn">Atualizar</button>';
   document.body.appendChild(d);
-  document.getElementById('updateBtn').onclick = () => worker.postMessage('SKIP_WAITING');
+  document.getElementById('updateBtn').addEventListener('click', () => worker.postMessage('SKIP_WAITING'));
 }
 if ('serviceWorker' in navigator) {
   let refreshing = false;
@@ -150,7 +172,7 @@ if ('serviceWorker' in navigator) {
     window.location.reload();
   });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(reg => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => { // 'none': confere sw.js e version.js sem cache HTTP
       reg.update().catch(() => {});
       setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
       reg.addEventListener('updatefound', () => {
@@ -169,15 +191,14 @@ window.addEventListener('beforeinstallprompt', e => {
   deferredPrompt = e;
   const d = document.createElement('div');
   d.id = 'installBanner';
-  d.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;z-index:60;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slideUp .4s ease';
-  d.className = 'glass';
-  d.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:.88rem">Instalar FARM</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">Adicione à tela inicial</div></div><button class="btn btn-primary btn-sm" id="installBtn" style="flex-shrink:0">Instalar</button><button id="dismissInstallBtn" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:1.2rem">✕</button>';
+  d.className = 'glass app-banner';
+  d.innerHTML = '<div class="app-banner-txt"><b>Instalar FARM</b><small>Adicione à tela inicial</small></div><button class="btn btn-primary btn-sm" id="installBtn">Instalar</button><button class="app-banner-x" id="dismissInstallBtn" aria-label="Fechar">✕</button>';
   document.body.appendChild(d);
-  document.getElementById('installBtn').onclick = () => {
+  document.getElementById('installBtn').addEventListener('click', () => {
     if (deferredPrompt) deferredPrompt.prompt();
     deferredPrompt?.userChoice.then(() => { deferredPrompt = null; d.remove(); });
-  };
-  document.getElementById('dismissInstallBtn').onclick = () => d.remove();
+  });
+  document.getElementById('dismissInstallBtn').addEventListener('click', () => d.remove());
 });
 
 // ---------- Aviso "sem internet" ----------
@@ -187,7 +208,6 @@ function updateOnlineBanner() {
   if (existing) return;
   const d = document.createElement('div');
   d.id = 'offlineBanner';
-  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:80;padding:8px;text-align:center;font-size:.75rem;font-weight:600;background:var(--danger);color:#fff';
   d.textContent = 'Sem internet — reconecte para continuar usando o FARM.';
   document.body.appendChild(d);
 }

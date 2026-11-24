@@ -6,11 +6,12 @@
 // não existe mais o campo "Manter conectado".
 import { supabase } from '../supabaseClient.js';
 import { state, resetTempSelections } from '../state.js';
-import { toast, safeRun, isValidEmail, isValidName, isValidPassword, switchLoginTab, requireOnline, goPage } from './ui.js';
+import { toast, safeRun, isValidEmail, isValidName, isValidPassword, switchLoginTab, requireOnline, goPage, refreshCurrentPage, refresh } from './ui.js';
 import { loadAllData } from './data.js';
 import { renderHome } from './dashboard.js';
 import { populateTouroOptions } from './touros.js';
 import { getAvatarUrl } from './fotos.js';
+import { purgeOldTrash } from './lixeira.js';
 
 export async function doLogin() {
   if (!requireOnline()) return;
@@ -51,32 +52,57 @@ export async function doRegister() {
   });
 }
 
+// Tela de abertura (logo) enquanto a sessão é verificada e os primeiros dados chegam.
+export function hideSplash() {
+  const sp = document.getElementById('splash');
+  if (!sp || sp.classList.contains('out')) return;
+  sp.classList.add('out');
+  setTimeout(() => sp.remove(), 450);
+}
+
+// Depois da fase 2 do carregamento: redesenha a tela aberta com os dados completos.
+function afterFullLoad() {
+  if (!state.db) return;
+  if (state.loadError) toast('Parte dos dados não carregou. Use Configurações → Atualizar dados.', 'error');
+  populateTouroOptions();
+  const cur = document.querySelector('.page.active')?.id;
+  if (cur === 'pageRebanho') refresh('rebanho'); // mantém a sub-tela aberta
+  else refreshCurrentPage();
+  purgeOldTrash(); // limpa da lixeira o que passou de 30 dias (em segundo plano)
+}
+
 export async function enterApp() {
   state.session = (await supabase.auth.getSession()).data.session;
   if (!state.session) return;
-  await loadAllData();
+  const { phase2 } = await loadAllData();
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('mainApp').style.display = 'flex';
   document.getElementById('profileName').value = state.db.user.name || 'Usuário';
   const em = document.getElementById('profileEmail');
   if (em) em.textContent = state.session.user.email || '';
-  const avatarUrl = await getAvatarUrl();
-  const img = document.getElementById('avatarImg');
-  const placeholder = document.getElementById('avatarPlaceholder');
-  if (avatarUrl) { img.src = avatarUrl; img.style.display = 'block'; placeholder.style.display = 'none'; }
-  else { img.removeAttribute('src'); img.style.display = 'none'; placeholder.style.display = 'block'; }
   populateTouroOptions();
-  renderHome();
+  goPage('pageHome', { noAnim: true });
+  hideSplash();
+  getAvatarUrl().then(avatarUrl => {
+    const img = document.getElementById('avatarImg');
+    const placeholder = document.getElementById('avatarPlaceholder');
+    if (avatarUrl) { img.src = avatarUrl; img.style.display = 'block'; placeholder.style.display = 'none'; }
+    else { img.removeAttribute('src'); img.style.display = 'none'; placeholder.style.display = 'block'; }
+  });
+  phase2.then(afterFullLoad);
+  return { phase2 }; // objeto (não a Promise): quem chama espera só a fase 1
 }
 
 // Recarrega tudo do Supabase (ex.: dados alterados em outro aparelho) e redesenha a tela atual.
 export async function reloadData() {
   if (!requireOnline()) return;
   await safeRun(async () => {
-    await loadAllData();
+    const { phase2 } = await loadAllData();
+    await phase2;
+    if (state.loadError) throw state.loadError;
     populateTouroOptions();
     const cur = document.querySelector('.page.active')?.id || 'pageHome';
-    goPage(cur);
+    goPage(cur, { noAnim: true });
   }, 'Dados atualizados!');
 }
 
@@ -113,8 +139,9 @@ export async function restoreSessionIfAny() {
   const { data } = await supabase.auth.getSession();
   if (data.session) {
     state.session = data.session;
-    await enterApp();
+    try { await enterApp(); } catch (err) { console.error(err); toast(err?.message || 'Erro ao carregar os dados', 'error'); }
   }
+  hideSplash();
   supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_OUT') {
       document.getElementById('loginPage').classList.remove('hidden');

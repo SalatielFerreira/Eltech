@@ -1,12 +1,13 @@
 // ========== ACESSO A DADOS (Supabase) ==========
-// Duas responsabilidades:
-// 1) Helpers genéricos de CRUD (dbInsert/dbUpdate/dbDelete/dbInsertMany)
-//    reaproveitados por todos os módulos de domínio.
-// 2) loadAllData(): busca tudo do usuário logado e remonta em memória
-//    (state.db) o MESMO formato aninhado que o app usava antes com
-//    localStorage — assim as funções de render (feitas noutra migração,
-//    ver módulos lotes/animais/inseminacao/...) continuam lendo
-//    `state.db.lotes[].animals[]` etc. sem precisar ser reescritas.
+// Responsabilidades:
+// 1) Helpers genéricos de CRUD reaproveitados pelos módulos de domínio.
+// 2) fetchAll(): leitura PAGINADA — o Supabase devolve no máximo 1.000 linhas por
+//    consulta; sem paginar, históricos grandes sumiam em silêncio.
+// 3) loadAllData(): carrega em DUAS FASES. A fase 1 (perfil, lotes, animais, touros)
+//    libera o app na hora; a fase 2 (históricos, inseminação, medicação, alimentação,
+//    baixas) chega em segundo plano e a tela atual é redesenhada quando termina.
+// 4) Lixeira (deleted_at) e funções atômicas do Postgres (RPC), sempre com plano B
+//    para bancos que ainda não receberam a migração da v4.4.0.
 import { supabase } from '../supabaseClient.js';
 import { state } from '../state.js';
 
@@ -35,15 +36,64 @@ export async function dbDeleteWhere(table, column, value) {
   const { error } = await supabase.from(table).delete().eq(column, value);
   if (error) throw error;
 }
-// Mantém só os `keep` registros mais recentes de um histórico (pesagens/leite).
-export async function trimHistory(table, animalId, keep) {
-  const { data, error } = await supabase.from(table).select('id').eq('animal_id', animalId).order('data', { ascending: true });
-  if (error) throw error;
-  if (data.length > keep) {
-    const toRemove = data.slice(0, data.length - keep).map(r => r.id);
-    const { error: delErr } = await supabase.from(table).delete().in('id', toRemove);
-    if (delErr) throw delErr;
+
+// ---------- Leitura paginada ----------
+const PAGE = 1000;
+// Busca TODAS as linhas da tabela. A 1ª página pede a contagem exata; as seguintes
+// continuam até alcançá-la — assim funciona mesmo que o limite do servidor seja outro.
+export async function fetchAll(table, { order = 'id', ascending = true, notDeleted = false, eq } = {}) {
+  const out = [];
+  let total = null;
+  for (let from = 0; ;) {
+    let q = supabase.from(table).select('*', from === 0 ? { count: 'exact' } : undefined);
+    if (eq) q = q.eq(eq[0], eq[1]);
+    if (notDeleted && state.caps.trash) q = q.is('deleted_at', null);
+    q = q.order(order, { ascending });
+    if (order !== 'id') q = q.order('id', { ascending: true }); // ordem estável entre páginas
+    const { data, error, count } = await q.range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (from === 0) total = count;
+    out.push(...data);
+    from += data.length; // avança pelo que veio: o servidor pode limitar a menos de 1.000
+    if (!data.length || (total != null ? out.length >= total : data.length < PAGE)) break;
   }
+  return out;
+}
+
+// ---------- Recursos do banco (migrações aplicadas?) ----------
+// Descobre se o banco já tem a coluna deleted_at (lixeira). Sem ela, exclusões continuam
+// definitivas como antes.
+export async function detectCaps() {
+  const { error } = await supabase.from('animais').select('deleted_at').limit(1);
+  state.caps.trash = !error;
+}
+function isMissingFunctionError(e) {
+  return !!e && (e.code === 'PGRST202' || e.code === '42883' || /could not find the function/i.test(e.message || ''));
+}
+// Chama uma função do Postgres (gravação atômica). Se o banco ainda não tem a função,
+// usa o caminho antigo (várias chamadas) e lembra disso até recarregar o app.
+export async function rpcOr(fn, params, fallback) {
+  if (state.caps.rpc !== false) {
+    const { data, error } = await supabase.rpc(fn, params);
+    if (!error) return data;
+    if (!isMissingFunctionError(error)) throw friendlyError(error);
+    state.caps.rpc = false;
+  }
+  return fallback();
+}
+export function friendlyError(err) {
+  if (err?.code === '23505') return new Error('Já existe um animal com esse nº no rebanho');
+  return err;
+}
+
+// ---------- Lixeira ----------
+export const TRASH_DAYS = 30;
+// Move para a lixeira (ou apaga de vez, se o banco não tem lixeira). Devolve 'trash' ou 'deleted'.
+export async function softDelete(table, id) {
+  if (!state.caps.trash) { await dbDelete(table, id); return 'deleted'; }
+  const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+  return 'trash';
 }
 
 // ---------- Helpers de leitura reaproveitados pelos módulos de domínio ----------
@@ -80,33 +130,51 @@ export function toLocalISO(date = new Date()) {
 export const todayISO = () => toLocalISO(new Date());
 export const fmtDateBR = s => (s ? new Date(s + 'T12:00').toLocaleDateString('pt-BR') : '');
 
-// Índice nº do animal -> data (AAAA-MM-DD) da inseminação mais recente. Montado uma vez
-// por renderização de lista, em vez de varrer todas as planilhas para cada animal.
-export function buildInsemIndex() {
+// ---------- Identificação do animal nos registros ----------
+// Registros de inseminação/medicação/alimentação guardam o id do animal (animal_id) e,
+// por compatibilidade com dados antigos, o nº. O id tem prioridade; o nº é só plano B.
+export function buildAnimalLookup() {
+  const byId = new Map(), byNum = new Map();
+  state.db.lotes.forEach(l => l.animals.forEach(a => { byId.set(a.id, a); if (!byNum.has(String(a.num))) byNum.set(String(a.num), a); }));
+  return { byId, byNum, idOf: (aid, num) => (aid && byId.has(aid) ? aid : byNum.get(String(num))?.id || '') };
+}
+// Índice id do animal -> data (AAAA-MM-DD) da inseminação mais recente.
+export function buildInsemIndex(lookup = buildAnimalLookup()) {
   const idx = new Map();
-  state.db.inseminacao.forEach(p => p.animals.forEach(a => {
-    if (a.data && (!idx.has(a.num) || a.data > idx.get(a.num))) idx.set(a.num, a.data);
+  state.db.inseminacao.forEach(p => p.animals.forEach(r => {
+    const id = lookup.idOf(r.aid, r.num);
+    if (id && r.data && (!idx.has(id) || r.data > idx.get(id))) idx.set(id, r.data);
   }));
   return idx;
 }
-export function getInsemDate(num, index) {
-  const d = (index || buildInsemIndex()).get(num) || '';
-  return fmtDateBR(d);
+export function getInsemDate(animal, index) {
+  return fmtDateBR((index || buildInsemIndex()).get(animal.id) || '');
 }
 export function resolveAid(num) {
-  const a = getAllAnimals().find(x => String(x.num) === String(num));
-  return a ? a.id : '';
+  return buildAnimalLookup().byNum.get(String(num))?.id || '';
 }
 export function matchAnimal(entryNum, entryAid, animal) {
-  return (entryAid && entryAid === animal.id) || String(entryNum) === String(animal.num);
+  if (entryAid) return entryAid === animal.id;
+  return String(entryNum) === String(animal.num);
 }
 export function getAnimalById(aid) {
-  let r = null;
-  state.db.lotes.forEach(l => {
+  for (const l of state.db.lotes) {
     const f = l.animals.find(x => x.id === aid);
-    if (f) r = { ...f, loteName: l.name, loteId: l.id };
-  });
-  return r;
+    if (f) return { ...f, loteName: l.name, loteId: l.id };
+  }
+  return null;
+}
+// Mãe/pai: pelo id quando existe (v4.4+), senão pelo nome (cadastros antigos).
+export function findMae(a, all = getAllAnimals()) {
+  return (a.maeId && all.find(x => x.id === a.maeId)) || (a.nomeMae ? all.find(x => x.nome === a.nomeMae && x.sexo === 'Fêmea') : null) || null;
+}
+export function findPai(a, all = getAllAnimals()) {
+  return (a.paiId && all.find(x => x.id === a.paiId)) || (a.nomePai ? all.find(x => x.nome === a.nomePai && x.sexo === 'Macho') : null) || null;
+}
+export function findFilhos(a, all = getAllAnimals()) {
+  return all.filter(x => x.id !== a.id && (
+    (x.maeId ? x.maeId === a.id : (a.nome && x.nomeMae === a.nome)) ||
+    (x.paiId ? x.paiId === a.id : (a.nome && x.nomePai === a.nome))));
 }
 
 // ---------- Mapeadores linha (snake_case) -> objeto em memória (camelCase) ----------
@@ -116,6 +184,7 @@ function mapAnimalRow(row) {
     tipoPrenhez: row.tipo_prenhez || '', dataNasc: row.data_nasc || '',
     sexo: row.sexo, cat: row.cat, sit: row.sit || '', raca: row.raca || '',
     grauSangue: row.grau_sangue || '', nomeMae: row.nome_mae || '', nomePai: row.nome_pai || '',
+    maeId: row.mae_id || '', paiId: row.pai_id || '',
     peso: row.peso ?? '', leite: row.leite ?? '', ultimoParto: row.ultimo_parto || '',
     prenhaData: row.prenha_data || '', photoPath: row.photo_path || '',
     brinco: row.brinco || '', registro: row.registro || '', pelagem: row.pelagem || '', obs: row.obs || '',
@@ -125,25 +194,28 @@ function mapAnimalRow(row) {
 }
 
 // ---------- Gravação de animal tolerante a banco ainda não atualizado ----------
-// As colunas abaixo foram adicionadas na v4.2.0 (supabase/migrations/20261117_animais_campos_extras.sql).
-// Se o banco ainda não recebeu a migração, o Supabase recusa a gravação por coluna
-// inexistente; nesse caso gravamos o animal sem esses campos (o cadastro continua
-// funcionando) e avisamos quem chamou via `extrasIgnored`.
-export const ANIMAL_EXTRA_COLS = ['brinco', 'registro', 'pelagem', 'obs', 'data_compra', 'valor_compra', 'vendedor'];
+// Colunas criadas por migrações (v4.2: campos extras; v4.4: mae_id/pai_id). Se o banco
+// ainda não tem alguma, o Supabase recusa a gravação; removemos SÓ a coluna que faltou
+// e tentamos de novo — o cadastro continua funcionando e quem chamou é avisado.
+export const ANIMAL_EXTRA_COLS = ['brinco', 'registro', 'pelagem', 'obs', 'data_compra', 'valor_compra', 'vendedor', 'mae_id', 'pai_id'];
 function isMissingColumnError(err) {
-  return !!err && (err.code === 'PGRST204' || err.code === '42703' || /column/i.test(err.message || '') && /(schema cache|does not exist)/i.test(err.message || ''));
+  return !!err && (err.code === 'PGRST204' || err.code === '42703' || (/column/i.test(err.message || '') && /(schema cache|does not exist)/i.test(err.message || '')));
 }
 export async function dbWriteAnimal(id, row) {
-  try {
-    const data = id ? await dbUpdate('animais', id, row) : await dbInsert('animais', row);
-    return { data, extrasIgnored: false };
-  } catch (err) {
-    if (!isMissingColumnError(err)) throw err;
-    const slim = { ...row };
-    ANIMAL_EXTRA_COLS.forEach(c => delete slim[c]);
-    const data = id ? await dbUpdate('animais', id, slim) : await dbInsert('animais', slim);
-    return { data, extrasIgnored: true };
+  const r = { ...row };
+  const ignored = [];
+  for (let i = 0; i <= ANIMAL_EXTRA_COLS.length; i++) {
+    try {
+      const data = id ? await dbUpdate('animais', id, r) : await dbInsert('animais', r);
+      return { data, extrasIgnored: ignored.some(c => !['mae_id', 'pai_id'].includes(c)), ignored };
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw friendlyError(err);
+      const col = (/'([a-z_]+)' column/i.exec(err.message || '') || /column "?([a-z_]+)"?/i.exec(err.message || ''))?.[1];
+      if (col && col in r) { delete r[col]; ignored.push(col); }
+      else { ANIMAL_EXTRA_COLS.forEach(c => { if (c in r) { delete r[c]; ignored.push(c); } }); }
+    }
   }
+  throw new Error('Não foi possível salvar o animal');
 }
 
 const groupBy = (rows, key) => {
@@ -158,89 +230,97 @@ function mapInsemRow(row) {
     parecer: row.parecer || '', parecerData: row.parecer_data || '',
   };
 }
-
-// ---------- Hidratação completa após login ----------
-export async function loadAllData() {
-  const uid = state.session.user.id;
-  const [
-    profileRes, lotesRes, animaisRes, pesagensRes, leiteRes, tourosRes,
-    planilhasRes, insemRegsRes, medicacoesRes, medMedsRes, medAnimaisRes,
-    alimentacoesRes, aliDietasRes, aliAnimaisRes, baixasRes,
-  ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', uid).single(),
-    supabase.from('lotes').select('*').order('created_at'),
-    supabase.from('animais').select('*'),
-    supabase.from('animal_pesagens').select('*').order('data'),
-    supabase.from('animal_leite_hist').select('*').order('data'),
-    supabase.from('touros').select('*').order('nome'),
-    supabase.from('inseminacao_planilhas').select('*').order('created_at', { ascending: false }),
-    supabase.from('inseminacao_registros').select('*'),
-    supabase.from('medicacoes').select('*'),
-    supabase.from('medicacao_medicamentos').select('*'),
-    supabase.from('medicacao_animais').select('*'),
-    supabase.from('alimentacoes').select('*').order('created_at', { ascending: false }),
-    supabase.from('alimentacao_dietas').select('*'),
-    supabase.from('alimentacao_animais').select('*'),
-    supabase.from('baixas').select('*').order('created_at', { ascending: false }),
-  ]);
-  for (const res of [profileRes, lotesRes, animaisRes, pesagensRes, leiteRes, tourosRes,
-    planilhasRes, insemRegsRes, medicacoesRes, medMedsRes, medAnimaisRes,
-    alimentacoesRes, aliDietasRes, aliAnimaisRes, baixasRes]) {
-    if (res.error) throw res.error;
-  }
-
-  // Agrupa as tabelas-filhas uma vez (Map) em vez de filtrar a tabela inteira para cada registro.
-  const pesagensBy = groupBy(pesagensRes.data, 'animal_id');
-  const leiteBy = groupBy(leiteRes.data, 'animal_id');
-  const insemBy = groupBy(insemRegsRes.data, 'planilha_id');
-  const medMedsBy = groupBy(medMedsRes.data, 'medicacao_id');
-  const medAnimaisBy = groupBy(medAnimaisRes.data, 'medicacao_id');
-  const aliDietasBy = groupBy(aliDietasRes.data, 'alimentacao_id');
-  const aliAnimaisBy = groupBy(aliAnimaisRes.data, 'alimentacao_id');
-
-  const animaisByLote = {};
-  animaisRes.data.forEach(row => {
-    const animal = mapAnimalRow(row);
-    animal.pesagens = (pesagensBy.get(row.id) || []).map(p => ({ peso: p.peso, data: p.data }));
-    animal.leiteHist = (leiteBy.get(row.id) || []).map(l => ({ leite: l.leite, data: l.data }));
-    (animaisByLote[row.lote_id] ||= []).push(animal);
-  });
-
-  const lotes = lotesRes.data.map(l => ({
-    id: l.id, name: l.name, ordem: l.ordem, createdAt: new Date(l.created_at).getTime(),
-    animals: animaisByLote[l.id] || [],
-  }));
-
-  const inseminacao = planilhasRes.data.map(p => ({
-    id: p.id, name: p.name, createdAt: new Date(p.created_at).getTime(),
-    animals: (insemBy.get(p.id) || []).map(mapInsemRow),
-  }));
-
-  const medDirect = medicacoesRes.data.map(m => ({
-    id: m.id, dataIni: m.data_ini || '', dataFim: m.data_fim || '', tipo: m.tipo || '',
-    carenciaLeite: m.carencia_leite ?? '', carenciaCarne: m.carencia_carne ?? '',
-    medicamentos: (medMedsBy.get(m.id) || []).map(x => ({ nome: x.nome, dose: x.dose || '' })),
-    animais: (medAnimaisBy.get(m.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
-  }));
-
-  const aliDirect = alimentacoesRes.data.map(a => ({
-    id: a.id, createdAt: new Date(a.created_at).getTime(), nomeDieta: a.nome_dieta || '',
-    numAnimais: a.num_animais || 0, custoTotal: a.custo_total || 0,
-    dietas: (aliDietasBy.get(a.id) || []).map(x => ({ tipo: x.tipo, valorKg: x.valor_kg ?? '', kg: x.kg ?? '' })),
-    animais: (aliAnimaisBy.get(a.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
-  }));
-
-  const touros = tourosRes.data.map(t => ({ id: t.id, nome: t.nome, raca: t.raca || '', grauSangue: t.grau_sangue || '', registro: t.registro || '' }));
-
-  const baixas = baixasRes.data.map(b => ({
+export function mapBaixaRow(b) {
+  return {
     ...b.animal_snapshot,
     baixaRowId: b.id,
     baixa: { tipo: b.tipo, data: b.data, valor: b.valor ?? '', obs: b.obs || '', loteName: b.lote_name || '', at: new Date(b.created_at).getTime() },
-  }));
+  };
+}
 
+// ---------- Carregamento em duas fases ----------
+// Devolve quando a FASE 1 termina (app já pode ser exibido). `state.ready` é uma Promise
+// resolvida ao fim da fase 2; gravações esperam por ela (ver ui.safeRun) para não haver
+// conflito entre o que chega do banco e o que o usuário acabou de salvar.
+export async function loadAllData() {
+  const uid = state.session.user.id;
+  state.loaded = false;
+  let resolveReady;
+  state.ready = new Promise(r => { resolveReady = r; });
+  await detectCaps();
+
+  const [profileRes, lotesRows, animaisRows, tourosRows] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', uid).single(),
+    fetchAll('lotes', { order: 'created_at', notDeleted: true }),
+    fetchAll('animais', { order: 'created_at', notDeleted: true }),
+    fetchAll('touros', { order: 'nome' }),
+  ]);
+  if (profileRes.error && profileRes.error.code !== 'PGRST116') throw profileRes.error;
+
+  const animaisByLote = {};
+  const animalById = new Map();
+  animaisRows.forEach(row => {
+    const animal = mapAnimalRow(row);
+    animalById.set(row.id, animal);
+    (animaisByLote[row.lote_id] ||= []).push(animal);
+  });
+  const lotes = lotesRows.map(l => ({
+    id: l.id, name: l.name, ordem: l.ordem, createdAt: new Date(l.created_at).getTime(),
+    animals: animaisByLote[l.id] || [],
+  }));
   state.db = {
-    lotes, inseminacao, medDirect, aliDirect, touros, baixas,
+    lotes, inseminacao: [], medDirect: [], aliDirect: [], baixas: [],
+    touros: tourosRows.map(t => ({ id: t.id, nome: t.nome, raca: t.raca || '', grauSangue: t.grau_sangue || '', registro: t.registro || '' })),
     user: { id: uid, name: profileRes.data?.name || 'Usuário', avatarPath: profileRes.data?.avatar_path || '' },
   };
-  return state.db;
+
+  const phase2 = (async () => {
+    try {
+      const [pesagens, leite, planilhas, insemRegs, medicacoes, medMeds, medAnimais, alimentacoes, aliDietas, aliAnimais, baixasRows] = await Promise.all([
+        fetchAll('animal_pesagens', { order: 'data' }),
+        fetchAll('animal_leite_hist', { order: 'data' }),
+        fetchAll('inseminacao_planilhas', { order: 'created_at', ascending: false, notDeleted: true }),
+        fetchAll('inseminacao_registros'),
+        fetchAll('medicacoes', { notDeleted: true }),
+        fetchAll('medicacao_medicamentos'),
+        fetchAll('medicacao_animais'),
+        fetchAll('alimentacoes', { order: 'created_at', ascending: false, notDeleted: true }),
+        fetchAll('alimentacao_dietas'),
+        fetchAll('alimentacao_animais'),
+        fetchAll('baixas', { order: 'created_at', ascending: false }),
+      ]);
+      // Agrupa as tabelas-filhas uma vez (Map) em vez de filtrar a tabela inteira para cada registro.
+      groupBy(pesagens, 'animal_id').forEach((rows, aid) => { const a = animalById.get(aid); if (a) a.pesagens = rows.map(p => ({ peso: p.peso, data: p.data })); });
+      groupBy(leite, 'animal_id').forEach((rows, aid) => { const a = animalById.get(aid); if (a) a.leiteHist = rows.map(l => ({ leite: l.leite, data: l.data })); });
+      const insemBy = groupBy(insemRegs, 'planilha_id');
+      const medMedsBy = groupBy(medMeds, 'medicacao_id');
+      const medAnimaisBy = groupBy(medAnimais, 'medicacao_id');
+      const aliDietasBy = groupBy(aliDietas, 'alimentacao_id');
+      const aliAnimaisBy = groupBy(aliAnimais, 'alimentacao_id');
+      Object.assign(state.db, {
+        inseminacao: planilhas.map(p => ({ id: p.id, name: p.name, createdAt: new Date(p.created_at).getTime(), animals: (insemBy.get(p.id) || []).map(mapInsemRow) })),
+        medDirect: medicacoes.map(m => ({
+          id: m.id, dataIni: m.data_ini || '', dataFim: m.data_fim || '', tipo: m.tipo || '',
+          carenciaLeite: m.carencia_leite ?? '', carenciaCarne: m.carencia_carne ?? '',
+          medicamentos: (medMedsBy.get(m.id) || []).map(x => ({ nome: x.nome, dose: x.dose || '' })),
+          animais: (medAnimaisBy.get(m.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
+        })),
+        aliDirect: alimentacoes.map(a => ({
+          id: a.id, createdAt: new Date(a.created_at).getTime(), nomeDieta: a.nome_dieta || '',
+          numAnimais: a.num_animais || 0, custoTotal: a.custo_total || 0,
+          dietas: (aliDietasBy.get(a.id) || []).map(x => ({ tipo: x.tipo, valorKg: x.valor_kg ?? '', kg: x.kg ?? '' })),
+          animais: (aliAnimaisBy.get(a.id) || []).map(x => ({ num: x.num, nome: x.nome, aid: x.animal_id || '' })),
+        })),
+        baixas: baixasRows.map(mapBaixaRow),
+      });
+      state.loadError = null;
+    } catch (err) {
+      console.error(err);
+      state.loadError = err;
+    } finally {
+      state.loaded = true;
+      resolveReady();
+    }
+  })();
+  return { phase2 };
 }

@@ -1,7 +1,8 @@
 // ========== INSEMINAÇÃO ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerModalSetup, registerModalTeardown, registerAnimalSelectProvider, refresh, openActionSheet, ensureBackBuffer } from './ui.js';
-import { dbInsert, dbInsertMany, dbUpdate, dbDelete, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO, fmtDateBR, ageDays } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerPageEnter, registerModalSetup, registerModalTeardown, registerAnimalSelectProvider, refresh, openActionSheet, ensureBackBuffer, callAction, skeletonHtml } from './ui.js';
+import { dbInsert, dbInsertMany, dbUpdate, dbDelete, softDelete, getAllAnimals, sortByNum, loteCmp, resolveAid, todayISO, fmtDateBR, ageDays } from './data.js';
+import { bumpTrash } from './lixeira.js';
 import { SIT_OPTIONS } from './constants.js';
 import { ICON_DOTS, emptyStateHtml, sitTag } from './animalRow.js';
 
@@ -43,22 +44,23 @@ function renderInsemKpis() {
 }
 
 export function renderPlanilhas() {
-  renderInsemKpis();
   const el = $('insemPlanilhas');
+  if (!state.loaded) { $('insemKpis').innerHTML = ''; el.innerHTML = skeletonHtml(3); return; }
+  renderInsemKpis();
   const sorted = [...state.db.inseminacao].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   if (!sorted.length) {
-    el.innerHTML = emptyStateHtml('Nenhuma planilha criada. Crie uma planilha (ex.: por mês) para registrar as inseminações.', { label: 'Criar planilha', onclick: "openModal('planilhaModal')" });
+    el.innerHTML = emptyStateHtml('Nenhuma planilha criada. Crie uma planilha (ex.: por mês) para registrar as inseminações.', { label: 'Criar planilha', action: ['openModal', 'planilhaModal'] });
     return;
   }
   el.innerHTML = sorted.map(p => {
     const s = planStats(p);
     const pct = v => (s.total ? (v / s.total * 100).toFixed(1) : 0) + '%';
     const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('pt-BR') : '';
-    return `<div class="plan-card" onclick="openInsemDetail('${p.id}')">
+    return `<div class="plan-card" data-click="[&quot;openInsemDetail&quot;,&quot;${p.id}&quot;]">
   <div class="plan-top">
     <div class="lote-ico ico-gold">${ICON_FLASK}</div>
     <div class="lote-main"><div class="lote-name">${esc(p.name)}</div><div class="lote-meta">${s.total} registro(s)${dateStr ? ' · criada em ' + dateStr : ''}</div></div>
-    <button class="ani-more" onclick="event.stopPropagation();openPlanActions('${p.id}')" aria-label="Opções da planilha">${ICON_DOTS}</button>
+    <button class="ani-more" data-click="[&quot;openPlanActions&quot;,&quot;${p.id}&quot;]" aria-label="Opções da planilha">${ICON_DOTS}</button>
   </div>
   ${s.total ? `<div class="stackbar"><span class="sb-ok" style="width:${pct(s.prenhas)}"></span><span class="sb-bad" style="width:${pct(s.vazias)}"></span><span class="sb-wait" style="width:${pct(s.aguardando)}"></span></div>
   <div class="plan-legend"><span><i class="dot dot-ok"></i>${s.prenhas} prenha(s)</span><span><i class="dot dot-bad"></i>${s.vazias} vazia(s)</span><span><i class="dot dot-wait"></i>${s.aguardando} aguardando</span></div>` : ''}
@@ -113,14 +115,17 @@ export async function savePlanilha() {
 export async function delPlan(id) {
   const p = state.db.inseminacao.find(x => x.id === id);
   if (!p) return;
-  const ok = await showConfirm(p.animals.length ? `Excluir a planilha "${p.name}" e os ${p.animals.length} registro(s) dela?` : `Excluir a planilha "${p.name}"?`, '🗑️');
+  const fim = state.caps.trash ? ' Ela fica 30 dias na lixeira.' : '';
+  const ok = await showConfirm((p.animals.length ? `Excluir a planilha "${p.name}" e os ${p.animals.length} registro(s) dela?` : `Excluir a planilha "${p.name}"?`) + fim, '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('inseminacao_planilhas', id);
+    const r = await softDelete('inseminacao_planilhas', id);
+    if (r === 'trash') bumpTrash();
     state.db.inseminacao = state.db.inseminacao.filter(x => x.id !== id);
     if (state.currentPlanId === id) backToList();
     else renderPlanilhas();
-  }, 'Planilha excluída');
+    toast(r === 'trash' ? 'Planilha movida para a lixeira' : 'Planilha excluída');
+  }).catch(() => {});
 }
 
 export function openInsemDetail(id) {
@@ -166,7 +171,7 @@ export function renderAnimals() {
   sortByNum(recs);
   if (!recs.length) {
     container.innerHTML = p.animals.length ? emptyStateHtml('Nenhum registro com esse filtro.')
-      : emptyStateHtml('Nenhuma inseminação nesta planilha.', { label: 'Registrar inseminação', onclick: 'openInsemAnimalForPlan()' });
+      : emptyStateHtml('Nenhuma inseminação nesta planilha.', { label: 'Registrar inseminação', action: ['openInsemAnimalForPlan'] });
     return;
   }
   container.innerHTML = recs.map(r => {
@@ -175,16 +180,16 @@ export function renderAnimals() {
     const info = PARECER_INFO[r.parecer];
     const status = r.parecer ? sitTag(r.parecer) : `<span class="tag ${pronta ? 'tag-warn' : 'tag-wait'}">${pronta ? 'Pronta p/ diagnóstico' : 'Aguardando'}</span>`;
     const meta = [r.data ? fmtDateBR(r.data) + (dias !== '' ? ` (há ${dias}d)` : '') : 'Sem data', r.touro ? 'Touro ' + esc(r.touro) : ''].filter(Boolean).join(' · ');
-    return `<div class="ani-card rec-card" onclick="openInsemRecActions('${r.id}')">
+    return `<div class="ani-card rec-card" data-click="[&quot;openInsemRecActions&quot;,&quot;${r.id}&quot;]">
   <div class="rec-ico ${info ? info.cls : pronta ? 'pv-warn' : 'pv-wait'}">${info ? info.icon : '🔬'}</div>
   <div class="ani-main">
     <div class="ani-top"><span class="ani-num">#${esc(r.num)}</span><span class="ani-name">${esc(r.nome)}</span></div>
     <div class="ani-tags">${status}${r.muco ? `<span class="tag">Muco ${esc(r.muco)}</span>` : ''}${r.tempo ? `<span class="tag">${esc(r.tempo)}</span>` : ''}</div>
     <div class="ani-meta">${meta}</div>
     ${r.obs ? `<div class="ani-meta ani-obs">“${esc(r.obs)}”</div>` : ''}
-    ${!r.parecer ? `<button class="pill-btn" onclick="event.stopPropagation();openParecer('${r.id}')">Dar diagnóstico</button>` : ''}
+    ${!r.parecer ? `<button class="pill-btn" data-click="[&quot;openParecer&quot;,&quot;${r.id}&quot;]">Dar diagnóstico</button>` : ''}
   </div>
-  <button class="ani-more" onclick="event.stopPropagation();openInsemRecActions('${r.id}')" aria-label="Ações">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openInsemRecActions&quot;,&quot;${r.id}&quot;]" aria-label="Ações">${ICON_DOTS}</button>
 </div>`;
   }).join('');
 }
@@ -199,7 +204,7 @@ export function openInsemRecActions(recId) {
     sub: r.data ? 'Inseminada em ' + fmtDateBR(r.data) : '',
     actions: [
       { label: r.parecer ? `Alterar diagnóstico (${r.parecer})` : 'Dar diagnóstico', icon: '🩺', fn: () => openParecer(recId) },
-      ...(aid ? [{ label: 'Ver ficha do animal', icon: '📋', fn: () => window.openFicha(aid) }] : []),
+      ...(aid ? [{ label: 'Ver ficha do animal', icon: '📋', fn: () => callAction('openFicha', aid) }] : []),
       { label: 'Editar registro', icon: '✏️', fn: () => editInsemAnimal(recId) },
       { label: 'Excluir registro', icon: '🗑️', tone: 'danger', fn: () => delInsemAnimal(recId) },
     ],
@@ -255,7 +260,7 @@ export function addInsemAnimal() {
 export function renderTempInsemAnimals() {
   const n = state.tempInsemAnimals.length;
   $('insemSelectedAnimals').innerHTML = state.tempInsemAnimals.map((a, i) =>
-    `<button type="button" class="pick-chip" onclick="removeTempInsemAnimal(${i})" aria-label="Remover">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') +
+    `<button type="button" class="pick-chip" data-click="[&quot;removeTempInsemAnimal&quot;,${i}]" aria-label="Remover">#${esc(a.num)} ${esc(a.nome)}<span>✕</span></button>`).join('') +
     (n ? `<span class="pick-count">${n} animal(is)</span>` : '');
 }
 export function removeTempInsemAnimal(i) { state.tempInsemAnimals.splice(i, 1); renderTempInsemAnimals(); }
@@ -354,7 +359,7 @@ export function openParecer(recId) {
   const ordem = ['Prenha', ...SIT_OPTIONS.filter(o => o !== 'Prenha')];
   $('parecerOptions').innerHTML = ordem.map(o => {
     const info = PARECER_INFO[o] || { icon: '•', cls: '', desc: '' };
-    return `<button type="button" class="parecer-opt ${info.cls}${o === cur ? ' active' : ''}" onclick="setParecer('${o}')"><span class="po-ico">${info.icon}</span><b>${o}</b><small>${info.desc}</small></button>`;
+    return `<button type="button" class="parecer-opt ${info.cls}${o === cur ? ' active' : ''}" data-click="[&quot;setParecer&quot;,&quot;${o}&quot;]"><span class="po-ico">${info.icon}</span><b>${o}</b><small>${info.desc}</small></button>`;
   }).join('');
   openModal('parecerModal');
 }

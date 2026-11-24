@@ -2,6 +2,60 @@
 
 O formato segue, de forma simplificada, o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [4.4.0] — 2026-11-24
+
+### Troca de tela arrastando o dedo
+
+- **Arraste para os lados** para ir à aba vizinha (mesma ordem da barra inferior): a tela
+  seguinte entra junto com o dedo, com resistência "elástica" nas pontas e aceitação de
+  gesto rápido. Dentro de uma sub-tela (lote, todos os animais, planilha), arrastar para a
+  direita **volta**. O arrasto não atrapalha a rolagem vertical, os campos, os filtros
+  roláveis nem os gestos de borda do sistema.
+- Ao tocar nas abas, a tela agora **desliza da direção certa** (aba à direita entra pela
+  direita).
+- **Tela de abertura** com a marca enquanto a sessão é verificada (antes a tela de login
+  aparecia por um instante para quem já estava logado).
+
+### Dados mais seguros
+
+- **Nada some com rebanho grande:** o Supabase devolve no máximo 1.000 linhas por consulta;
+  agora o app busca **em páginas** (testado com 2.400 pesagens e com limite de servidor menor).
+- **Carregamento em duas fases:** rebanho na hora; históricos, inseminação, medicação,
+  alimentação e baixas chegam em segundo plano (com esqueleto animado enquanto isso).
+- **Histórico completo de peso e leite** (antes guardava só as 5 últimas pesagens e os 20
+  últimos registros de leite). Os gráficos da ficha mostram os 30 mais recentes.
+- **Mãe e pai ligados pelo ID** do animal: renomear a mãe não quebra mais a família, e os
+  cadastros antigos são ligados automaticamente pela migração.
+- **Nº do animal único** também no banco (antes só o app conferia).
+- **Gravações atômicas (tudo ou nada):** salvar medicação/alimentação, dar baixa, restaurar
+  baixa e excluir lote acontecem numa transação só no banco — se a internet cair no meio,
+  nada fica pela metade.
+- **Lixeira de 30 dias** (Configurações → Lixeira): lotes (com os animais), animais,
+  planilhas, medicações e alimentações excluídos podem ser **restaurados**; depois de 30
+  dias são apagados de vez, com as fotos.
+- Alertas, gráficos e relatórios identificam o animal pelo ID (o nº fica só para dados
+  antigos).
+
+### Desempenho e técnica
+
+- **PDF de verdade:** o relatório abre a impressão do navegador ("Salvar como PDF"), com
+  cabeçalho, tabelas em A4, cabeçalho repetido a cada página e nome de arquivo pronto.
+- **Ícones** do app 75% menores (680 KB → 155 KB) e fora do carregamento da página.
+- **Versão em um lugar só** (`version.js`), lida pelo app e pelo service worker.
+- **Zoom liberado** (acessibilidade) e campos com 16 px no celular, para o iPhone não dar
+  zoom sozinho ao tocar num campo; suporte às bordas de celulares com entalhe.
+- **Sem código inline no HTML:** os ~190 `onclick`/`oninput`/`onchange` viraram
+  `data-click`/`data-input`/`data-change` com ações registradas no `main.js`, o que permitiu
+  uma **política de segurança (CSP)** que bloqueia scripts injetados.
+- **Testes automatizados no repositório** (`tests/`, 141 verificações) e no **GitHub
+  Actions** a cada push.
+
+### ⚠️ Atualização do banco (uma vez)
+
+Rode `supabase/migrations/20261124_v44_integridade_lixeira.sql` no SQL Editor do Supabase.
+Sem ela o app continua funcionando como antes (exclusão definitiva, gravações em etapas,
+mãe/pai pelo nome) e a Lixeira avisa que precisa da atualização.
+
 ## [4.3.0] — 2026-11-17
 
 ### Todas as telas redesenhadas no padrão do Rebanho

@@ -1,7 +1,9 @@
 // ========== LOTES ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerModalSetup, renderListChunked, openActionSheet, refresh, ensureBackBuffer } from './ui.js';
-import { dbInsert, dbUpdate, dbDelete, loteCmp, sortByNum, buildInsemIndex } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, registerModalSetup, renderListChunked, openActionSheet, refresh, ensureBackBuffer, callAction } from './ui.js';
+import { dbInsert, dbUpdate, dbDelete, loteCmp, sortByNum, buildInsemIndex, rpcOr } from './data.js';
+import { supabase } from '../supabaseClient.js';
+import { bumpTrash } from './lixeira.js';
 import { animalRowHtml, emptyStateHtml, ICON_DOTS } from './animalRow.js';
 import { hydrateThumbs } from './fotos.js';
 
@@ -47,17 +49,32 @@ export function editLoteFromCard(id) {
 export async function delLote(id) {
   const l = state.db.lotes.find(x => x.id === id);
   if (!l) return;
-  const msg = l.animals.length
-    ? `Excluir o lote "${l.name}" e os ${l.animals.length} animal(is) dentro dele? Esta ação não pode ser desfeita.`
-    : `Excluir o lote "${l.name}"?`;
+  const lixeira = state.caps.trash;
+  const qtd = l.animals.length ? ` e os ${l.animals.length} animal(is) dentro dele` : '';
+  const msg = lixeira
+    ? `Excluir o lote "${l.name}"${qtd}? Tudo fica 30 dias na lixeira (Configurações) e pode ser restaurado.`
+    : `Excluir o lote "${l.name}"${qtd}? Esta ação não pode ser desfeita.`;
   const ok = await showConfirm(msg, '🗑️');
   if (!ok) return;
   await safeRun(async () => {
-    await dbDelete('lotes', id);
+    if (lixeira) {
+      // Lote e animais vão juntos para a lixeira (de uma vez, pela função do banco).
+      await rpcOr('lote_para_lixeira', { p_lote_id: id }, async () => {
+        const agora = new Date().toISOString();
+        let r = await supabase.from('lotes').update({ deleted_at: agora }).eq('id', id);
+        if (r.error) throw r.error;
+        r = await supabase.from('animais').update({ deleted_at: agora }).eq('lote_id', id).is('deleted_at', null);
+        if (r.error) throw r.error;
+      });
+      bumpTrash();
+    } else {
+      await dbDelete('lotes', id);
+    }
     state.db.lotes = state.db.lotes.filter(x => x.id !== id);
     if (state.currentLoteId === id) backToLotes();
     refresh('rebanho');
-  }, 'Lote excluído');
+    toast(lixeira ? 'Lote movido para a lixeira' : 'Lote excluído');
+  }).catch(() => {});
 }
 
 function sortedLotes() {
@@ -89,7 +106,7 @@ export function renderLotes() {
   const sub = document.getElementById('lotesSub');
   if (sub) sub.textContent = `${all.length} lote(s) · ${totalAnimais} animal(is)`;
   if (!shown.length) {
-    container.innerHTML = q ? emptyStateHtml('Nenhum lote encontrado.') : emptyStateHtml('Nenhum lote criado ainda.', { label: 'Criar primeiro lote', onclick: "openModal('loteModal')" });
+    container.innerHTML = q ? emptyStateHtml('Nenhum lote encontrado.') : emptyStateHtml('Nenhum lote criado ainda.', { label: 'Criar primeiro lote', action: ['openModal', 'loteModal'] });
     return;
   }
   container.innerHTML = shown.map((l, i) => {
@@ -97,7 +114,7 @@ export function renderLotes() {
     const pctF = s.total ? Math.round(s.f / s.total * 100) : 0;
     const meta = [`${s.total} animal(is)`, s.total ? `♀ ${s.f} · ♂ ${s.m}` : '', s.lact ? `${s.lact} em lactação · ${s.leite.toFixed(0)} L/dia` : '', s.prenhas ? `${s.prenhas} prenha(s)` : '']
       .filter(Boolean).join(' · ');
-    return `<div class="lote-card" data-lote-id="${l.id}" onclick="openLoteDetail('${l.id}')">
+    return `<div class="lote-card" data-lote-id="${l.id}" data-click="[&quot;openLoteDetail&quot;,&quot;${l.id}&quot;]">
   <div class="lote-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
   <div class="lote-main">
     <div class="lote-name">${esc(l.name)}</div>
@@ -105,10 +122,10 @@ export function renderLotes() {
     ${s.total ? `<div class="sexbar" title="Fêmeas ${pctF}%"><span style="width:${pctF}%"></span></div>` : ''}
   </div>
   ${q ? '' : `<div class="lote-move">
-    <button onclick="event.stopPropagation();moveLote('${l.id}',-1)" title="Subir" aria-label="Subir lote" ${i === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg></button>
-    <button onclick="event.stopPropagation();moveLote('${l.id}',1)" title="Descer" aria-label="Descer lote" ${i === shown.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button data-click="[&quot;moveLote&quot;,&quot;${l.id}&quot;,-1]" title="Subir" aria-label="Subir lote" ${i === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg></button>
+    <button data-click="[&quot;moveLote&quot;,&quot;${l.id}&quot;,1]" title="Descer" aria-label="Descer lote" ${i === shown.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
   </div>`}
-  <button class="ani-more" onclick="event.stopPropagation();openLoteActions('${l.id}')" aria-label="Opções do lote">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openLoteActions&quot;,&quot;${l.id}&quot;]" aria-label="Opções do lote">${ICON_DOTS}</button>
 </div>`;
   }).join('');
 }
@@ -122,7 +139,7 @@ export function openLoteActions(id = state.currentLoteId) {
     actions: [
       ...(state.currentLoteId === id && !document.getElementById('loteDetail').classList.contains('hidden') ? [] :
         [{ label: 'Abrir lote', icon: '📂', fn: () => openLoteDetail(id) }]),
-      { label: 'Adicionar animal neste lote', icon: '➕', fn: () => { state.currentLoteId = id; window.openAnimalForLote(); } },
+      { label: 'Adicionar animal neste lote', icon: '➕', fn: () => { state.currentLoteId = id; callAction('openAnimalForLote'); } },
       { label: 'Renomear lote', icon: '✏️', fn: () => editLoteFromCard(id) },
       { label: 'Excluir lote', icon: '🗑️', tone: 'danger', fn: () => delLote(id) },
     ],
@@ -189,7 +206,7 @@ export function renderLoteAnimals() {
   sortByNum(animals);
   if (!animals.length) {
     container.innerHTML = (q || fs || fc || fst) ? emptyStateHtml('Nenhum animal encontrado com esses filtros.')
-      : emptyStateHtml('Nenhum animal neste lote.', { label: 'Adicionar animal', onclick: 'openAnimalForLote()' });
+      : emptyStateHtml('Nenhum animal neste lote.', { label: 'Adicionar animal', action: ['openAnimalForLote'] });
     return;
   }
   const insemIndex = buildInsemIndex();

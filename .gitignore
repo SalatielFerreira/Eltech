@@ -18,3 +18,7 @@ node_modules/
 
 # Credenciais do Supabase (copie config.example.js -> config.js e preencha)
 assets/js/config.js
+
+# Testes
+__pycache__/
+tests/shots/

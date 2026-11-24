@@ -29,8 +29,11 @@ export function toast(msg, type = 'success') {
 
 // Envolve uma ação assíncrona: mostra toast de erro automaticamente se falhar.
 // Usado por todo handler que fala com o Supabase (evita repetir try/catch).
+// Antes de gravar, espera o fim do carregamento em segundo plano (fase 2), para o que
+// chega do banco não sobrescrever o que o usuário acabou de salvar.
 export async function safeRun(action, okMsg) {
   try {
+    await state.ready;
     const result = await action();
     if (okMsg) toast(okMsg);
     return result;
@@ -117,19 +120,75 @@ export function ensureBackBuffer() {
   } catch (e) { /* ambientes sem History API (raro) — ignora */ }
 }
 
-export function goPage(id) {
+// Ordem das abas na barra inferior (usada na animação de direção e no arrasto lateral).
+export const NAV_ORDER = ['pageRebanho', 'pageInseminacao', 'pageMedicacao', 'pageHome', 'pageAlimentacao', 'pageRelatorios', 'pageConfig'];
+const renderedPages = new Set();
+export const wasRendered = id => renderedPages.has(id);
+export function enterPage(id) { pageEnterHandlers[id]?.(); renderedPages.add(id); }
+
+// opts.skipEnter: a página já foi desenhada (arrasto lateral); opts.noAnim: sem animação.
+export function goPage(id, opts = {}) {
   const cur = document.querySelector('.page.active');
   if (!state.navLock && cur && cur.id !== id) {
     state.pageHistory.push(cur.id);
     if (state.pageHistory.length > 25) state.pageHistory.shift();
     ensureBackBuffer();
   }
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const next = document.getElementById(id);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'from-left', 'from-right', 'still'));
+  if (opts.noAnim) next.classList.add('still');
+  // Desliza da direção certa: aba à direita entra pela direita, à esquerda pela esquerda.
+  if (!opts.noAnim && cur && cur.id !== id) {
+    const a = NAV_ORDER.indexOf(cur.id), b = NAV_ORDER.indexOf(id);
+    if (a >= 0 && b >= 0) next.classList.add(b > a ? 'from-right' : 'from-left');
+  }
+  next.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === id));
   document.querySelector('.page-content').scrollTop = 0;
-  pageEnterHandlers[id]?.();
+  if (!opts.skipEnter) enterPage(id);
 }
+// Redesenha a página aberta sem mexer na rolagem (ex.: quando a fase 2 dos dados chega).
+export function refreshCurrentPage() {
+  const cur = document.querySelector('.page.active');
+  if (!cur) return;
+  const sc = document.querySelector('.page-content'), top = sc.scrollTop;
+  enterPage(cur.id);
+  sc.scrollTop = top;
+}
+
+// Placeholder animado enquanto a fase 2 dos dados ainda não chegou.
+export const skeletonHtml = (n = 3) => Array.from({ length: n }, () =>
+  '<div class="skel-card"><div class="skel skel-ico"></div><div class="skel-lines"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div>').join('');
+
+// ---------- Ações (sem onclick no HTML) ----------
+// O HTML e os templates usam data-click / data-input / data-change com um JSON:
+//   ["nomeDaAcao", arg1, arg2]  ou  [["acao1", ...], ["acao2", ...]]
+// Argumentos especiais: "$this" (o elemento), "$event", "$checked", "$value".
+// Só o elemento MAIS PRÓXIMO com data-click roda — botões dentro de cartões clicáveis
+// não disparam o cartão (equivale ao antigo event.stopPropagation()).
+const actions = {};
+export function registerActions(obj) { Object.assign(actions, obj); }
+export function callAction(name, ...args) {
+  const fn = actions[name];
+  if (!fn) { console.warn('Ação desconhecida:', name); return undefined; }
+  return fn(...args);
+}
+export const act = (name, ...args) => `data-click="${esc(JSON.stringify([name, ...args]))}"`;
+export const actOn = (type, name, ...args) => `data-${type}="${esc(JSON.stringify([name, ...args]))}"`;
+export const actChain = (type, ...steps) => `data-${type}="${esc(JSON.stringify(steps))}"`;
+function runSteps(el, json, ev) {
+  let steps;
+  try { steps = JSON.parse(json); } catch { return; }
+  if (!Array.isArray(steps[0])) steps = [steps];
+  for (const [name, ...args] of steps) {
+    callAction(name, ...args.map(x => (x === '$this' ? el : x === '$event' ? ev : x === '$checked' ? el.checked : x === '$value' ? el.value : x)));
+  }
+}
+['click', 'input', 'change'].forEach(type => document.addEventListener(type, e => {
+  const el = e.target.closest?.(`[data-${type}]`);
+  if (!el || el.disabled) return;
+  runSteps(el, el.getAttribute(`data-${type}`), e);
+}));
 
 export function toggleFilterBar(id) {
   document.getElementById(id)?.classList.toggle('hidden');

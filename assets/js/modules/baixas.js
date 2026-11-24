@@ -1,7 +1,7 @@
 // ========== BAIXAS (venda / morte) ==========
 import { state } from '../state.js';
-import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, refresh, openActionSheet } from './ui.js';
-import { dbInsert, dbDelete, getAnimalById, todayISO, fmtDateBR, dbWriteAnimal } from './data.js';
+import { esc, toast, safeRun, showConfirm, openModal, closeModal, requireOnline, refresh, openActionSheet, skeletonHtml } from './ui.js';
+import { dbInsert, dbDelete, getAnimalById, todayISO, fmtDateBR, dbWriteAnimal, rpcOr, mapBaixaRow } from './data.js';
 import { ICON_DOTS, emptyStateHtml } from './animalRow.js';
 import { updateFilterBadge } from './lotes.js';
 
@@ -43,13 +43,20 @@ export async function confirmBaixa() {
     });
     if (!animal) throw new Error('Animal não encontrado');
 
-    const row = await dbInsert('baixas', {
-      num: animal.num, nome: animal.nome, sexo: animal.sexo, cat: animal.cat,
-      tipo: state.baixaTipo, data, valor: valor === '' ? null : valor, obs, lote_name: loteName,
-      animal_snapshot: animal,
+    // Grava a baixa e remove o animal numa transação só (dar_baixa); sem a função, em 2 passos.
+    const row = await rpcOr('dar_baixa', {
+      p_animal_id: animal.id, p_tipo: state.baixaTipo, p_data: data, p_valor: valor === '' ? null : valor,
+      p_obs: obs, p_lote_name: loteName, p_snapshot: animal,
+    }, async () => {
+      const r = await dbInsert('baixas', {
+        num: animal.num, nome: animal.nome, sexo: animal.sexo, cat: animal.cat,
+        tipo: state.baixaTipo, data, valor: valor === '' ? null : valor, obs, lote_name: loteName,
+        animal_snapshot: animal,
+      });
+      // Remove o animal de verdade (cascata cuida de pesagens/leiteHist e desvincula insem/med/ali).
+      await dbDelete('animais', animal.id);
+      return r;
     });
-    // Remove o animal de verdade (cascata cuida de pesagens/leiteHist e desvincula insem/med/ali).
-    await dbDelete('animais', animal.id);
     // Só tira da memória depois que o banco confirmou (se falhar no meio, a tela não mente).
     lote.animals = lote.animals.filter(x => x.id !== animal.id);
 
@@ -74,6 +81,7 @@ export function renderBaixas() {
   const c = document.getElementById('baixasList');
   const list = state.db.baixas || [];
   if (!c) return;
+  if (!state.loaded) { c.innerHTML = skeletonHtml(2); return; }
   const vendas = list.filter(b => b.baixa?.tipo === 'venda');
   const mortes = list.length - vendas.length;
   const totalVendas = vendas.reduce((s, b) => s + (parseFloat(b.baixa?.valor) || 0), 0);
@@ -106,7 +114,7 @@ export function renderBaixas() {
     <div class="ani-tags"><span class="tag ${venda ? 'tag-venda' : 'tag-bad'}">${venda ? 'Venda' : 'Morte'}</span>${b.cat ? `<span class="tag">${esc(b.cat)}</span>` : ''}</div>
     ${meta ? `<div class="ani-meta">${meta}</div>` : ''}${bx.obs ? `<div class="ani-meta ani-obs">“${esc(bx.obs)}”</div>` : ''}
   </div>
-  <button class="ani-more" onclick="openBaixaActions('${b.baixaRowId}')" aria-label="Ações da baixa">${ICON_DOTS}</button>
+  <button class="ani-more" data-click="[&quot;openBaixaActions&quot;,&quot;${b.baixaRowId}&quot;]" aria-label="Ações da baixa">${ICON_DOTS}</button>
 </div>`;
   }).join('');
 }
@@ -137,7 +145,7 @@ export async function restaurarBaixa(baixaRowId) {
       state.db.lotes.push(lote);
     }
     const { baixaRowId: _drop, baixa: _drop2, ...animalData } = b;
-    const { data: insertRow } = await dbWriteAnimal(null, {
+    const row = {
       lote_id: lote.id, num: animalData.num, nome: animalData.nome, origem: animalData.origem || null,
       tipo_prenhez: animalData.tipoPrenhez || null, data_nasc: animalData.dataNasc || null, sexo: animalData.sexo,
       cat: animalData.cat, sit: animalData.sit || null, raca: animalData.raca || null, grau_sangue: animalData.grauSangue || null,
@@ -146,9 +154,15 @@ export async function restaurarBaixa(baixaRowId) {
       photo_path: animalData.photoPath || null,
       brinco: animalData.brinco || null, registro: animalData.registro || null, pelagem: animalData.pelagem || null, obs: animalData.obs || null,
       data_compra: animalData.dataCompra || null, valor_compra: animalData.valorCompra || null, vendedor: animalData.vendedor || null,
+      mae_id: animalData.maeId || null, pai_id: animalData.paiId || null,
+    };
+    // Volta o animal e apaga a baixa numa transação só (restaurar_baixa); sem a função, em 2 passos.
+    const newId = await rpcOr('restaurar_baixa', { p_baixa_id: baixaRowId, p_animal: row }, async () => {
+      const { data: insertRow } = await dbWriteAnimal(null, row);
+      await dbDelete('baixas', baixaRowId);
+      return insertRow.id;
     });
-    lote.animals.push({ ...animalData, id: insertRow.id, pesagens: animalData.pesagens || [], leiteHist: animalData.leiteHist || [] });
-    await dbDelete('baixas', baixaRowId);
+    lote.animals.push({ ...animalData, id: newId, pesagens: animalData.pesagens || [], leiteHist: animalData.leiteHist || [] });
     state.db.baixas = state.db.baixas.filter(x => x.baixaRowId !== baixaRowId);
     refresh('rebanho');
   }, 'Animal restaurado!');

@@ -6,6 +6,10 @@
 export const state = {
   session: null, // sessão do Supabase Auth (supabase.auth.getSession())
   db: null,      // { lotes, inseminacao, medDirect, aliDirect, touros, baixas, user }
+  loaded: false, // true quando a fase 2 do carregamento terminou (ver data.loadAllData)
+  ready: Promise.resolve(), // resolvida ao fim da fase 2; gravações esperam por ela
+  loadError: null,
+  caps: { trash: false, rpc: undefined }, // recursos do banco (migração v4.4 aplicada?)
 
   // Navegação / seleção atual (equivalente aos globais soltos do app.js antigo)
   currentLoteId: null,
